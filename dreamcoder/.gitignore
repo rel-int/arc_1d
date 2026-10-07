@@ -4,3 +4,4 @@ __pycache__/
 /results/quick/
 checkpoint.pkl
 /results/*.log
+partial-*.pkl

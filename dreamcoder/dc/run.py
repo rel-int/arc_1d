@@ -40,7 +40,7 @@ def parse():
     parser.add_argument("--data", type=Path, default=Path("data"))
     parser.add_argument("--out", type=Path, default=None)
     parser.add_argument("--resume", action="store_true",
-                        help="continue from the checkpoint of the last finished iteration in --out")
+                        help="continue from the checkpoints in --out: finished iterations, then finished tasks")
     for name, value in asdict(Config()).items():
         parser.add_argument(f"--{name.replace('_', '-')}", type=type(value), default=value)
     args = parser.parse_args()
@@ -74,10 +74,18 @@ def main():
         print(f"resuming after iteration {len(history) - 1}", flush=True)
     with get_context("fork").Pool(args.workers) as pool:
         for iteration in range(len(history), args.iterations):
-            start = time.time()
             terms = candidates(library, config)
-            jobs = [(t, terms, library, config, iteration) for t in tasks]
-            results = dict(pool.imap_unordered(run_task, jobs))
+            partial = args.out / f"partial-{iteration}.pkl"
+            results, spent = pickle.loads(partial.read_bytes()) \
+                if args.resume and partial.exists() else ({}, 0.)
+            start = time.time() - spent
+            jobs = [(t, terms, library, config, iteration) for t in tasks if t.name not in results]
+            for name, solutions in pool.imap_unordered(run_task, jobs):
+                results[name] = solutions
+                if len(results) % 20 == 0 or len(results) == len(tasks):
+                    partial.write_bytes(pickle.dumps((results, time.time() - start)))
+                    print(f"  iteration {iteration}: {len(results)}/{len(tasks)} tasks, "
+                          f"{time.time() - start:.0f}s", flush=True)
             best = {name: solutions[0] for name, solutions in results.items()}
             record = summarise(iteration, tasks, results, library, len(terms))
             added = abstract(library, best, args.new_boxes, iteration) \
