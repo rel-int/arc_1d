@@ -58,3 +58,8 @@ def test_equivariant_commutes_with_foreground_permutations():
     for perm in itertools.islice(itertools.permutations(range(1, 10)), 50):
         p = torch.eye(10)[[0, *perm]]
         assert torch.allclose(p @ m, m @ p, atol=1e-6)
+
+
+def test_terms_read_back_from_their_print(library):
+    for term in enumerate_terms(library, 3):
+        assert Term.parse(str(term)) == term

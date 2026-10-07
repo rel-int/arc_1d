@@ -41,6 +41,27 @@ class Term:
         """The number of boxes, i.e. of nodes that are not ``x``."""
         return (self.head != "x") + sum(a.size for a in self.args)
 
+    @classmethod
+    def parse(cls, text: str) -> Term:
+        """The term printed as ``text``, e.g. ``Term.parse("paint(x, scan(x))")``."""
+        term, rest = cls.read(text.replace(" ", ""))
+        assert not rest, f"trailing {rest!r}"
+        return term
+
+    @classmethod
+    def read(cls, text: str) -> tuple[Term, str]:
+        head = text[:min((text.find(c) for c in "(,)" if c in text), default=len(text))]
+        rest, args = text[len(head):], []
+        if rest.startswith("("):
+            rest = rest[1:]
+            while True:
+                arg, rest = cls.read(rest)
+                args.append(arg)
+                rest, done = rest[1:], rest[0] == ")"
+                if done:
+                    break
+        return cls(head, tuple(args)), rest
+
     def subterms(self, path: str = "r"):
         """Every node with its path: ``r`` for the root, ``r_i`` for its ``i``-th argument, etc."""
         yield path, self

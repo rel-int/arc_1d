@@ -156,8 +156,12 @@ def write_report(args, config, tasks, by_name, history, best, results, library):
     failed = [n for n in sorted(last) if not last[n][2]]
     pick = random.Random(config.seed)
     for kind, names in (("Solved", solved), ("Failed", failed)):
-        chosen = sorted(pick.sample(names, min(3, len(names))),
-                        key=lambda n: by_name[n].family)
+        chosen, families = [], set()
+        for name in pick.sample(names, len(names)):
+            if len(chosen) < 3 and by_name[name].family not in families:
+                chosen.append(name)
+                families.add(by_name[name].family)
+        chosen.sort(key=lambda n: by_name[n].family)
         for name in chosen:
             solution = results[name][0]
             path = figures / f"{name}.png"
