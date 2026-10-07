@@ -6,7 +6,7 @@
   "workers": 4,
   "data": "data",
   "out": "results/full-size5",
-  "resume": false,
+  "resume": true,
   "max_size": 5,
   "max_candidates": 80,
   "steps": 100,
