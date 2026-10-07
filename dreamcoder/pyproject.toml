@@ -1,0 +1,21 @@
+[project]
+name = "diagrammatic-dreamcoder"
+version = "0.1.0"
+description = "A minimal wake/abstract loop over DisCoPy string diagrams on 1D-ARC"
+requires-python = ">=3.12"
+dependencies = [
+    # discopy.neural is not on main yet: pinned to the head of discopy#743
+    # (neural-stack/b-compile, Network + its PyTorch compile), stacked on #736/#701.
+    "discopy @ git+https://github.com/discopy/discopy@609a3dff6cab169279c93bf2eac75d72be71bd86",
+    "torch>=2.4",
+    "matplotlib",
+]
+
+[dependency-groups]
+dev = ["pytest"]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
