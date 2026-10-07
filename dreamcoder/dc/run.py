@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import pickle
 import platform
 import random
 import time
@@ -38,6 +39,8 @@ def parse():
     parser.add_argument("--workers", type=int, default=4)
     parser.add_argument("--data", type=Path, default=Path("data"))
     parser.add_argument("--out", type=Path, default=None)
+    parser.add_argument("--resume", action="store_true",
+                        help="continue from the checkpoint of the last finished iteration in --out")
     for name, value in asdict(Config()).items():
         parser.add_argument(f"--{name.replace('_', '-')}", type=type(value), default=value)
     args = parser.parse_args()
@@ -64,10 +67,13 @@ def main():
         | {"torch": torch.__version__, "python": platform.python_version()}, indent=2))
     tasks = data.load(args.data, args.per_family or None, config.seed)
     by_name = {t.name: t for t in tasks}
-    library = Library.base()
-    history, best = [], {}
+    library, history, best, results = Library.base(), [], {}, {}
+    checkpoint = args.out / "checkpoint.pkl"
+    if args.resume and checkpoint.exists():
+        library, history, best, results = pickle.loads(checkpoint.read_bytes())
+        print(f"resuming after iteration {len(history) - 1}", flush=True)
     with get_context("fork").Pool(args.workers) as pool:
-        for iteration in range(args.iterations):
+        for iteration in range(len(history), args.iterations):
             start = time.time()
             terms = candidates(library, config)
             jobs = [(t, terms, library, config, iteration) for t in tasks]
@@ -84,6 +90,7 @@ def main():
                   f"library {record['library']}, {record['seconds']:.0f}s, new {record['new_boxes']}",
                   flush=True)
             (args.out / "history.json").write_text(json.dumps(history, indent=2))
+            checkpoint.write_bytes(pickle.dumps((library, history, best, results)))
     write_report(args, config, tasks, by_name, history, best, results, library)
 
 

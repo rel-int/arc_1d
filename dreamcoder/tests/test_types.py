@@ -63,3 +63,11 @@ def test_equivariant_commutes_with_foreground_permutations():
 def test_terms_read_back_from_their_print(library):
     for term in enumerate_terms(library, 3):
         assert Term.parse(str(term)) == term
+
+
+def test_quotas_reach_every_size(library):
+    from dc.wake import Config, candidates
+    terms = candidates(library, Config(max_size=5, quotas="3:57,4:50,5:43"))
+    sizes = [t.size for t in terms]
+    assert len(terms) == 150 and sizes.count(4) == 50 and sizes.count(5) == 43
+    assert candidates(library, Config(max_size=5))[:80] == candidates(library, Config(max_size=4))[:80]

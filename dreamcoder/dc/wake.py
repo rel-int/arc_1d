@@ -35,6 +35,8 @@ class Config:
     lr: float = 0.05
     delta: float = 0.01  # quantum of the parameter code
     shrink: float = 0.5  # proximal step after each Adam step, as a fraction of lr
+    stop_bits: float = 0.1  # stop fitting once the training pairs fit exactly within this many bits
+    quotas: str = ""  # e.g. "3:57,4:50,5:43": the most probable 57 of size <= 3, 50 of size 4, 43 of size 5
     keep: int = 3
     seed: int = 0
 
@@ -64,8 +66,10 @@ def fit(term: Term, task: Task, library: Library, semantics: Semantics, config: 
     Fit the parameters of one candidate on the training pairs: Adam on the
     data bits, each step followed by a proximal step shrinking every
     deviation from the prior towards zero, so that a parameter the data does
-    not consistently push stays exactly at its prior and costs nothing. Then
-    round the deviations below half a quantum back to the prior and score.
+    not consistently push stays exactly at its prior and costs nothing. Stop
+    early once the training pairs fit exactly within ``stop_bits``, since
+    further steps only buy confidence. Then round the deviations below half a
+    quantum back to the prior and score.
     """
     torch.manual_seed(seed_for(config.seed, iteration, task.name, term))
     model = semantics.model(term, library)
@@ -74,9 +78,13 @@ def fit(term: Term, task: Task, library: Library, semantics: Semantics, config: 
     parameters = list(model.parameters())
     if parameters:
         optimiser = torch.optim.Adam(parameters, lr=config.lr)
-        for _ in range(config.steps):
+        for step in range(config.steps):
             optimiser.zero_grad()
-            nll_bits(model(inputs), targets).backward()
+            output = model(inputs)
+            data = nll_bits(output, targets)
+            if step % 10 == 9 and data < config.stop_bits and (output.argmax(-1) == targets).all():
+                break
+            data.backward()
             optimiser.step()
             model.shrink(config.shrink * config.lr)
         model.snap(config.delta)
@@ -92,10 +100,22 @@ def fit(term: Term, task: Task, library: Library, semantics: Semantics, config: 
 
 
 def candidates(library: Library, config: Config) -> list[Term]:
-    """The ``max_candidates`` terms of highest prior probability, up to ``max_size`` boxes."""
+    """
+    The terms of highest prior probability up to ``max_size`` boxes: the
+    ``max_candidates`` best overall, or with ``quotas`` the best few of each
+    size bucket, so that a search budget reaches the larger sizes at all.
+    """
     from dc.terms import enumerate_terms
-    terms = enumerate_terms(library, config.max_size)
-    return sorted(terms, key=lambda t: (structure_bits(t, library), str(t)))[:config.max_candidates]
+    ranked = sorted(enumerate_terms(library, config.max_size),
+                    key=lambda t: (structure_bits(t, library), str(t)))
+    if not config.quotas:
+        return ranked[:config.max_candidates]
+    chosen, low = [], 1
+    for bucket in config.quotas.split(","):
+        high, count = map(int, bucket.split(":"))
+        chosen += [t for t in ranked if low <= t.size <= high][:count]
+        low = high + 1
+    return chosen
 
 
 def wake(task: Task, terms: list[Term], library: Library, semantics: Semantics, config: Config,
