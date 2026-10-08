@@ -37,6 +37,8 @@ def parse():
     parser.add_argument("--iterations", type=int, default=3)
     parser.add_argument("--new-boxes", type=int, default=2, help="library entries added per iteration")
     parser.add_argument("--workers", type=int, default=4)
+    parser.add_argument("--device", default="cpu",
+                        help="where every worker fits its candidates, e.g. cuda; workers then spawn rather than fork")
     parser.add_argument("--data", type=Path, default=Path("data"))
     parser.add_argument("--out", type=Path, default=None)
     parser.add_argument("--resume", action="store_true",
@@ -54,6 +56,21 @@ def parse():
 SHARED = {}  # what every worker of one iteration reads, inherited when the pool forks
 
 
+def share(shared, device):
+    """
+    Set ``SHARED`` in a spawned worker. CUDA does not survive a fork, so on a
+    GPU every worker starts afresh, its tensors made on ``device`` by default.
+    """
+    torch.set_default_device(device)
+    SHARED.update(shared)
+
+
+def pool(args):
+    if args.device == "cpu":
+        return get_context("fork").Pool(args.workers)
+    return get_context("spawn").Pool(args.workers, share, (dict(SHARED), args.device))
+
+
 def run_task(task):
     """
     Wake on one task in a worker. The library and the candidates come from
@@ -64,7 +81,7 @@ def run_task(task):
     solutions = wake(task, SHARED["terms"], SHARED["library"], TraceFree(),
                      SHARED["config"], SHARED["iteration"])
     for solution in solutions:
-        solution.weights = {k: w.numpy() for k, w in solution.weights.items()}
+        solution.weights = {k: w.cpu().numpy() for k, w in solution.weights.items()}
     return task.name, solutions
 
 
@@ -98,9 +115,9 @@ def main():
         results = {name: as_tensors(solutions) for name, solutions in results.items()}
         start = time.time() - spent
         SHARED.update(terms=terms, library=library, config=config, iteration=iteration)
-        with get_context("fork").Pool(args.workers) as pool:
+        with pool(args) as workers:
             todo = [t for t in tasks if t.name not in results]
-            for name, solutions in pool.imap_unordered(run_task, todo):
+            for name, solutions in workers.imap_unordered(run_task, todo):
                 results[name] = as_tensors(solutions)
                 if len(results) % 20 == 0 or len(results) == len(tasks):
                     partial.write_bytes(pickle.dumps((results, time.time() - start)))
