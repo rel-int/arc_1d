@@ -1,0 +1,19 @@
+{
+  "quick": false,
+  "per_family": 10,
+  "iterations": 3,
+  "new_boxes": 2,
+  "workers": 4,
+  "data": "data",
+  "out": "results/default",
+  "max_size": 3,
+  "max_candidates": 80,
+  "steps": 100,
+  "lr": 0.05,
+  "delta": 0.01,
+  "shrink": 0.5,
+  "keep": 3,
+  "seed": 0,
+  "torch": "2.14.1+cu130",
+  "python": "3.13.16"
+}

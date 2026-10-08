@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+/data
+/results/quick/
+checkpoint.pkl
+/results/*.log
+partial-*.pkl
