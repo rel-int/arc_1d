@@ -51,9 +51,27 @@ def parse():
     return args
 
 
-def run_task(job):
-    task, terms, library, config, iteration = job
-    return task.name, wake(task, terms, library, TraceFree(), config, iteration)
+SHARED = {}  # what every worker of one iteration reads, inherited when the pool forks
+
+
+def run_task(task):
+    """
+    Wake on one task in a worker. The library and the candidates come from
+    ``SHARED`` and the weights go back as arrays: a tensor crossing a process
+    boundary travels as a file descriptor, and 901 tasks of them exhaust the
+    limit on open files.
+    """
+    solutions = wake(task, SHARED["terms"], SHARED["library"], TraceFree(),
+                     SHARED["config"], SHARED["iteration"])
+    for solution in solutions:
+        solution.weights = {k: w.numpy() for k, w in solution.weights.items()}
+    return task.name, solutions
+
+
+def as_tensors(solutions):
+    for solution in solutions:
+        solution.weights = {k: torch.as_tensor(w) for k, w in solution.weights.items()}
+    return solutions
 
 
 def main():
@@ -72,33 +90,35 @@ def main():
     if args.resume and checkpoint.exists():
         library, history, best, results = pickle.loads(checkpoint.read_bytes())
         print(f"resuming after iteration {len(history) - 1}", flush=True)
-    with get_context("fork").Pool(args.workers) as pool:
-        for iteration in range(len(history), args.iterations):
-            terms = candidates(library, config)
-            partial = args.out / f"partial-{iteration}.pkl"
-            results, spent = pickle.loads(partial.read_bytes()) \
-                if args.resume and partial.exists() else ({}, 0.)
-            start = time.time() - spent
-            jobs = [(t, terms, library, config, iteration) for t in tasks if t.name not in results]
-            for name, solutions in pool.imap_unordered(run_task, jobs):
-                results[name] = solutions
+    for iteration in range(len(history), args.iterations):
+        terms = candidates(library, config)
+        partial = args.out / f"partial-{iteration}.pkl"
+        results, spent = pickle.loads(partial.read_bytes()) \
+            if args.resume and partial.exists() else ({}, 0.)
+        results = {name: as_tensors(solutions) for name, solutions in results.items()}
+        start = time.time() - spent
+        SHARED.update(terms=terms, library=library, config=config, iteration=iteration)
+        with get_context("fork").Pool(args.workers) as pool:
+            todo = [t for t in tasks if t.name not in results]
+            for name, solutions in pool.imap_unordered(run_task, todo):
+                results[name] = as_tensors(solutions)
                 if len(results) % 20 == 0 or len(results) == len(tasks):
                     partial.write_bytes(pickle.dumps((results, time.time() - start)))
                     print(f"  iteration {iteration}: {len(results)}/{len(tasks)} tasks, "
                           f"{time.time() - start:.0f}s", flush=True)
-            best = {name: solutions[0] for name, solutions in results.items()}
-            record = summarise(iteration, tasks, results, library, len(terms))
-            added = abstract(library, best, args.new_boxes, iteration) \
-                if iteration < args.iterations - 1 else []
-            record["new_boxes"] = [(e.signature(), str(e.body), len(e.weights)) for e in added]
-            record["seconds"] = time.time() - start
-            history.append(record)
-            print(f"iteration {iteration}: top-1 {record['top1']}/{len(tasks)}, "
-                  f"train-solved {record['train']}, mean DL {record['mean_dl']:.1f}, "
-                  f"library {record['library']}, {record['seconds']:.0f}s, new {record['new_boxes']}",
-                  flush=True)
-            (args.out / "history.json").write_text(json.dumps(history, indent=2))
-            checkpoint.write_bytes(pickle.dumps((library, history, best, results)))
+        best = {name: solutions[0] for name, solutions in results.items()}
+        record = summarise(iteration, tasks, results, library, len(terms))
+        added = abstract(library, best, args.new_boxes, iteration) \
+            if iteration < args.iterations - 1 else []
+        record["new_boxes"] = [(e.signature(), str(e.body), len(e.weights)) for e in added]
+        record["seconds"] = time.time() - start
+        history.append(record)
+        print(f"iteration {iteration}: top-1 {record['top1']}/{len(tasks)}, "
+              f"train-solved {record['train']}, mean DL {record['mean_dl']:.1f}, "
+              f"library {record['library']}, {record['seconds']:.0f}s, new {record['new_boxes']}",
+              flush=True)
+        (args.out / "history.json").write_text(json.dumps(history, indent=2))
+        checkpoint.write_bytes(pickle.dumps((library, history, best, results)))
     write_report(args, config, tasks, by_name, history, best, results, library)
 
 
