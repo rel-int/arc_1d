@@ -64,7 +64,8 @@ kernels and a GPU spends its time launching them. The default run, 180 tasks:
 | `default-cpu16` (head) | Modal, 16 cores | 76 / 88 / 98 | 761 s (135 / 298 / 316) |
 | `default-l4` (head) | Modal, L4 + 4 cores | 76 / – / – | iteration 0 alone 1,580 s |
 
-The L4 finds what 4 cores find, task for task, 3.7× slower (3.0× on
+The L4 solves the same 76 test pairs as 4 cores (5 of 180 best terms differ,
+by floating point), 3.7× slower (3.0× on
 `--quick`); it was preempted in iteration 1 and stopped there. Cores scale
 nearly linearly, 3.1× from 4 to 16. Results are not bit-reproducible across
 machines: with the committed code on another CPU, 8 of 180 best terms already
