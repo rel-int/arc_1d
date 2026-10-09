@@ -175,7 +175,8 @@ def starts(prior: dict, config: Config, iteration: int, term: Term) -> dict:
     so that a task's fit does not depend on what else is in its batch.
     """
     generator = torch.Generator().manual_seed(seed_for(config.seed, iteration, term))
-    noise = lambda p: config.noise * torch.randn(config.restarts - 1, *p.shape, generator=generator)
+    noise = lambda p: config.noise * torch.randn(
+        config.restarts - 1, *p.shape, generator=generator, device="cpu")
     return {k: torch.cat([p[None], p + noise(p).to(p.device)]) for k, p in prior.items()}
 
 
