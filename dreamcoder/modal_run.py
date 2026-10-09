@@ -86,8 +86,8 @@ def main(name: str, machine: str = "cpu4", args: str = ""):
 
 
 @app.local_entrypoint()
-def fetch(name: str):
-    target = HERE / "results"
+def fetch(name: str, target: str = ""):
+    target = Path(target) if target else HERE / "results"
     with tarfile.open(fileobj=io.BytesIO(fetch_remote.remote(name)), mode="r:gz") as tar:
         tar.extractall(target, filter="data")
     print(f"fetched results/{name}")
