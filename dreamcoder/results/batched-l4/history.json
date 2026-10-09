@@ -1,0 +1,2988 @@
+[
+  {
+    "iteration": 0,
+    "top1": 76,
+    "top3": 116,
+    "train": 91,
+    "tasks": 180,
+    "library": 7,
+    "candidates": 57,
+    "mean_dl": 84.89535753455404,
+    "family": {
+      "denoising_1c": [
+        6,
+        10
+      ],
+      "denoising_mc": [
+        1,
+        10
+      ],
+      "fill": [
+        1,
+        10
+      ],
+      "flip": [
+        0,
+        10
+      ],
+      "hollow": [
+        4,
+        10
+      ],
+      "mirror": [
+        1,
+        10
+      ],
+      "move_1p": [
+        9,
+        10
+      ],
+      "move_2p": [
+        10,
+        10
+      ],
+      "move_2p_dp": [
+        0,
+        10
+      ],
+      "move_3p": [
+        10,
+        10
+      ],
+      "move_dp": [
+        0,
+        10
+      ],
+      "padded_fill": [
+        8,
+        10
+      ],
+      "pcopy_1c": [
+        0,
+        10
+      ],
+      "pcopy_mc": [
+        1,
+        10
+      ],
+      "recolor_cmp": [
+        10,
+        10
+      ],
+      "recolor_cnt": [
+        6,
+        10
+      ],
+      "recolor_oe": [
+        6,
+        10
+      ],
+      "scale_dp": [
+        3,
+        10
+      ]
+    },
+    "solutions": {
+      "1d_denoising_1c_16": [
+        "shift(x)",
+        70.7,
+        false
+      ],
+      "1d_denoising_1c_22": [
+        "paint(x, local(x))",
+        55.4,
+        true
+      ],
+      "1d_denoising_1c_25": [
+        "shift(x)",
+        70.6,
+        true
+      ],
+      "1d_denoising_1c_27": [
+        "shift(x)",
+        67.6,
+        false
+      ],
+      "1d_denoising_1c_31": [
+        "paint(x, local(x))",
+        54.4,
+        true
+      ],
+      "1d_denoising_1c_37": [
+        "paint(x, local(x))",
+        55.0,
+        true
+      ],
+      "1d_denoising_1c_39": [
+        "paint(x, local(x))",
+        55.4,
+        true
+      ],
+      "1d_denoising_1c_44": [
+        "shift(x)",
+        70.1,
+        false
+      ],
+      "1d_denoising_1c_48": [
+        "paint(shift(x), local(x))",
+        71.0,
+        true
+      ],
+      "1d_denoising_1c_49": [
+        "shift(x)",
+        68.8,
+        false
+      ],
+      "1d_denoising_mc_0": [
+        "shift(x)",
+        58.3,
+        false
+      ],
+      "1d_denoising_mc_11": [
+        "shift(x)",
+        61.1,
+        false
+      ],
+      "1d_denoising_mc_15": [
+        "paint(shift(x), local(x))",
+        60.5,
+        true
+      ],
+      "1d_denoising_mc_21": [
+        "shift(x)",
+        60.8,
+        false
+      ],
+      "1d_denoising_mc_25": [
+        "shift(x)",
+        62.2,
+        false
+      ],
+      "1d_denoising_mc_30": [
+        "shift(x)",
+        64.7,
+        false
+      ],
+      "1d_denoising_mc_36": [
+        "shift(x)",
+        72.7,
+        false
+      ],
+      "1d_denoising_mc_44": [
+        "shift(x)",
+        58.6,
+        false
+      ],
+      "1d_denoising_mc_5": [
+        "shift(x)",
+        57.6,
+        false
+      ],
+      "1d_denoising_mc_6": [
+        "shift(x)",
+        54.8,
+        false
+      ],
+      "1d_fill_10": [
+        "recolour(paint(x, scan(x)))",
+        46.1,
+        true
+      ],
+      "1d_fill_14": [
+        "paint(x, local(shift(x)))",
+        131.8,
+        false
+      ],
+      "1d_fill_19": [
+        "shift(x)",
+        68.0,
+        false
+      ],
+      "1d_fill_28": [
+        "shift(x)",
+        62.7,
+        false
+      ],
+      "1d_fill_30": [
+        "paint(x, scan(recolour(x)))",
+        144.4,
+        false
+      ],
+      "1d_fill_32": [
+        "paint(x, scan(recolour(x)))",
+        140.3,
+        false
+      ],
+      "1d_fill_42": [
+        "shift(x)",
+        73.4,
+        false
+      ],
+      "1d_fill_46": [
+        "shift(shift(x))",
+        99.6,
+        false
+      ],
+      "1d_fill_49": [
+        "shift(x)",
+        67.5,
+        false
+      ],
+      "1d_fill_9": [
+        "paint(x, scan(shift(x)))",
+        112.5,
+        false
+      ],
+      "1d_flip_1": [
+        "paint(shift(x), local(x))",
+        111.9,
+        false
+      ],
+      "1d_flip_12": [
+        "paint(shift(x), scan(x))",
+        129.3,
+        false
+      ],
+      "1d_flip_13": [
+        "paint(recolour(x), scan(x))",
+        107.9,
+        false
+      ],
+      "1d_flip_2": [
+        "paint(shift(x), local(x))",
+        90.1,
+        false
+      ],
+      "1d_flip_27": [
+        "paint(shift(x), scan(x))",
+        105.3,
+        false
+      ],
+      "1d_flip_28": [
+        "paint(x, segment(x))",
+        120.9,
+        false
+      ],
+      "1d_flip_36": [
+        "paint(shift(x), scan(x))",
+        132.2,
+        false
+      ],
+      "1d_flip_38": [
+        "paint(shift(x), scan(x))",
+        123.1,
+        false
+      ],
+      "1d_flip_40": [
+        "shift(x)",
+        120.1,
+        false
+      ],
+      "1d_flip_42": [
+        "paint(shift(x), scan(x))",
+        109.3,
+        false
+      ],
+      "1d_hollow_0": [
+        "paint(x, local(reflect(x)))",
+        108.2,
+        false
+      ],
+      "1d_hollow_10": [
+        "paint(shift(x), segment(x))",
+        102.4,
+        true
+      ],
+      "1d_hollow_17": [
+        "shift(paint(x, segment(x)))",
+        102.7,
+        false
+      ],
+      "1d_hollow_23": [
+        "paint(x, local(reflect(x)))",
+        89.1,
+        false
+      ],
+      "1d_hollow_24": [
+        "recolour(paint(x, segment(x)))",
+        84.9,
+        true
+      ],
+      "1d_hollow_30": [
+        "recolour(paint(x, local(x)))",
+        88.6,
+        true
+      ],
+      "1d_hollow_33": [
+        "paint(x, scan(reflect(x)))",
+        82.3,
+        false
+      ],
+      "1d_hollow_39": [
+        "paint(shift(x), segment(x))",
+        95.2,
+        false
+      ],
+      "1d_hollow_40": [
+        "recolour(paint(x, segment(x)))",
+        83.1,
+        false
+      ],
+      "1d_hollow_43": [
+        "recolour(paint(x, scan(x)))",
+        64.2,
+        true
+      ],
+      "1d_mirror_1": [
+        "reflect(shift(x))",
+        82.3,
+        false
+      ],
+      "1d_mirror_13": [
+        "paint(x, segment(x))",
+        184.6,
+        false
+      ],
+      "1d_mirror_14": [
+        "shift(shift(reflect(x)))",
+        113.9,
+        false
+      ],
+      "1d_mirror_23": [
+        "reflect(shift(shift(x)))",
+        112.9,
+        false
+      ],
+      "1d_mirror_27": [
+        "reflect(shift(shift(x)))",
+        148.1,
+        false
+      ],
+      "1d_mirror_28": [
+        "reflect(shift(x))",
+        82.4,
+        true
+      ],
+      "1d_mirror_37": [
+        "reflect(shift(x))",
+        82.3,
+        false
+      ],
+      "1d_mirror_42": [
+        "shift(reflect(shift(x)))",
+        150.4,
+        false
+      ],
+      "1d_mirror_45": [
+        "shift(reflect(x))",
+        75.8,
+        false
+      ],
+      "1d_mirror_47": [
+        "shift(reflect(shift(x)))",
+        156.6,
+        false
+      ],
+      "1d_move_1p_10": [
+        "shift(x)",
+        52.5,
+        true
+      ],
+      "1d_move_1p_12": [
+        "shift(x)",
+        53.0,
+        true
+      ],
+      "1d_move_1p_16": [
+        "shift(x)",
+        53.2,
+        true
+      ],
+      "1d_move_1p_18": [
+        "paint(shift(x), local(x))",
+        52.2,
+        false
+      ],
+      "1d_move_1p_19": [
+        "shift(x)",
+        54.8,
+        true
+      ],
+      "1d_move_1p_3": [
+        "shift(x)",
+        52.4,
+        true
+      ],
+      "1d_move_1p_35": [
+        "shift(x)",
+        52.1,
+        true
+      ],
+      "1d_move_1p_36": [
+        "shift(x)",
+        54.4,
+        true
+      ],
+      "1d_move_1p_49": [
+        "shift(x)",
+        52.4,
+        true
+      ],
+      "1d_move_1p_8": [
+        "shift(x)",
+        54.8,
+        true
+      ],
+      "1d_move_2p_16": [
+        "shift(x)",
+        47.5,
+        true
+      ],
+      "1d_move_2p_25": [
+        "shift(x)",
+        48.2,
+        true
+      ],
+      "1d_move_2p_32": [
+        "shift(x)",
+        48.1,
+        true
+      ],
+      "1d_move_2p_36": [
+        "shift(x)",
+        48.0,
+        true
+      ],
+      "1d_move_2p_40": [
+        "shift(x)",
+        48.7,
+        true
+      ],
+      "1d_move_2p_41": [
+        "shift(x)",
+        47.6,
+        true
+      ],
+      "1d_move_2p_44": [
+        "shift(x)",
+        54.1,
+        true
+      ],
+      "1d_move_2p_45": [
+        "shift(x)",
+        47.9,
+        true
+      ],
+      "1d_move_2p_47": [
+        "shift(x)",
+        47.6,
+        true
+      ],
+      "1d_move_2p_5": [
+        "shift(x)",
+        45.9,
+        true
+      ],
+      "1d_move_2p_dp_1": [
+        "shift(x)",
+        68.4,
+        false
+      ],
+      "1d_move_2p_dp_11": [
+        "shift(x)",
+        69.9,
+        false
+      ],
+      "1d_move_2p_dp_18": [
+        "shift(x)",
+        66.4,
+        false
+      ],
+      "1d_move_2p_dp_21": [
+        "shift(x)",
+        66.9,
+        false
+      ],
+      "1d_move_2p_dp_30": [
+        "shift(x)",
+        65.3,
+        false
+      ],
+      "1d_move_2p_dp_38": [
+        "shift(x)",
+        66.3,
+        false
+      ],
+      "1d_move_2p_dp_42": [
+        "shift(x)",
+        68.1,
+        false
+      ],
+      "1d_move_2p_dp_47": [
+        "shift(x)",
+        67.0,
+        false
+      ],
+      "1d_move_2p_dp_48": [
+        "shift(x)",
+        69.9,
+        false
+      ],
+      "1d_move_2p_dp_7": [
+        "shift(x)",
+        59.4,
+        false
+      ],
+      "1d_move_3p_17": [
+        "shift(x)",
+        53.6,
+        true
+      ],
+      "1d_move_3p_18": [
+        "shift(x)",
+        53.9,
+        true
+      ],
+      "1d_move_3p_2": [
+        "shift(x)",
+        54.3,
+        true
+      ],
+      "1d_move_3p_31": [
+        "shift(x)",
+        53.9,
+        true
+      ],
+      "1d_move_3p_32": [
+        "shift(x)",
+        53.4,
+        true
+      ],
+      "1d_move_3p_33": [
+        "shift(x)",
+        53.6,
+        true
+      ],
+      "1d_move_3p_34": [
+        "shift(x)",
+        52.8,
+        true
+      ],
+      "1d_move_3p_37": [
+        "shift(x)",
+        52.8,
+        true
+      ],
+      "1d_move_3p_42": [
+        "shift(x)",
+        53.6,
+        true
+      ],
+      "1d_move_3p_9": [
+        "shift(x)",
+        54.4,
+        true
+      ],
+      "1d_move_dp_1": [
+        "shift(shift(x))",
+        127.6,
+        false
+      ],
+      "1d_move_dp_13": [
+        "recolour(paint(x, local(x)))",
+        149.0,
+        false
+      ],
+      "1d_move_dp_18": [
+        "shift(x)",
+        105.4,
+        false
+      ],
+      "1d_move_dp_2": [
+        "paint(reflect(x), scan(x))",
+        182.6,
+        false
+      ],
+      "1d_move_dp_28": [
+        "shift(shift(x))",
+        136.8,
+        false
+      ],
+      "1d_move_dp_38": [
+        "paint(x, scan(shift(x)))",
+        154.7,
+        false
+      ],
+      "1d_move_dp_44": [
+        "shift(x)",
+        62.2,
+        false
+      ],
+      "1d_move_dp_49": [
+        "paint(x, local(reflect(x)))",
+        126.3,
+        false
+      ],
+      "1d_move_dp_5": [
+        "shift(shift(x))",
+        155.3,
+        false
+      ],
+      "1d_move_dp_8": [
+        "shift(x)",
+        63.3,
+        false
+      ],
+      "1d_padded_fill_18": [
+        "recolour(paint(x, scan(x)))",
+        108.5,
+        true
+      ],
+      "1d_padded_fill_22": [
+        "recolour(paint(x, scan(x)))",
+        84.2,
+        false
+      ],
+      "1d_padded_fill_23": [
+        "recolour(paint(x, scan(x)))",
+        63.7,
+        true
+      ],
+      "1d_padded_fill_27": [
+        "recolour(paint(x, scan(x)))",
+        99.4,
+        false
+      ],
+      "1d_padded_fill_32": [
+        "recolour(paint(x, scan(x)))",
+        82.1,
+        true
+      ],
+      "1d_padded_fill_40": [
+        "recolour(paint(x, scan(x)))",
+        63.1,
+        true
+      ],
+      "1d_padded_fill_42": [
+        "recolour(paint(x, scan(x)))",
+        82.4,
+        true
+      ],
+      "1d_padded_fill_6": [
+        "recolour(paint(x, scan(x)))",
+        99.8,
+        true
+      ],
+      "1d_padded_fill_8": [
+        "recolour(paint(x, scan(x)))",
+        57.4,
+        true
+      ],
+      "1d_padded_fill_9": [
+        "recolour(paint(x, scan(x)))",
+        50.4,
+        true
+      ],
+      "1d_pcopy_1c_0": [
+        "shift(x)",
+        85.6,
+        false
+      ],
+      "1d_pcopy_1c_18": [
+        "shift(x)",
+        91.7,
+        false
+      ],
+      "1d_pcopy_1c_2": [
+        "shift(x)",
+        102.2,
+        false
+      ],
+      "1d_pcopy_1c_21": [
+        "shift(x)",
+        92.3,
+        false
+      ],
+      "1d_pcopy_1c_22": [
+        "shift(x)",
+        92.8,
+        false
+      ],
+      "1d_pcopy_1c_24": [
+        "shift(x)",
+        91.6,
+        false
+      ],
+      "1d_pcopy_1c_32": [
+        "shift(x)",
+        92.1,
+        false
+      ],
+      "1d_pcopy_1c_36": [
+        "shift(x)",
+        98.0,
+        false
+      ],
+      "1d_pcopy_1c_4": [
+        "shift(x)",
+        91.2,
+        false
+      ],
+      "1d_pcopy_1c_49": [
+        "shift(x)",
+        91.7,
+        false
+      ],
+      "1d_pcopy_mc_12": [
+        "shift(x)",
+        104.3,
+        false
+      ],
+      "1d_pcopy_mc_21": [
+        "paint(shift(x), local(x))",
+        82.7,
+        true
+      ],
+      "1d_pcopy_mc_24": [
+        "shift(x)",
+        86.7,
+        false
+      ],
+      "1d_pcopy_mc_26": [
+        "shift(x)",
+        98.4,
+        false
+      ],
+      "1d_pcopy_mc_27": [
+        "shift(x)",
+        75.5,
+        false
+      ],
+      "1d_pcopy_mc_30": [
+        "shift(x)",
+        93.1,
+        false
+      ],
+      "1d_pcopy_mc_32": [
+        "shift(x)",
+        86.9,
+        false
+      ],
+      "1d_pcopy_mc_33": [
+        "shift(x)",
+        93.2,
+        false
+      ],
+      "1d_pcopy_mc_36": [
+        "shift(x)",
+        75.6,
+        false
+      ],
+      "1d_pcopy_mc_49": [
+        "shift(x)",
+        92.9,
+        false
+      ],
+      "1d_recolor_cmp_10": [
+        "recolour(paint(x, segment(x)))",
+        69.5,
+        true
+      ],
+      "1d_recolor_cmp_11": [
+        "recolour(paint(x, segment(x)))",
+        67.7,
+        true
+      ],
+      "1d_recolor_cmp_18": [
+        "recolour(paint(x, segment(x)))",
+        70.6,
+        true
+      ],
+      "1d_recolor_cmp_3": [
+        "recolour(paint(x, segment(x)))",
+        69.3,
+        true
+      ],
+      "1d_recolor_cmp_34": [
+        "recolour(paint(x, segment(x)))",
+        58.8,
+        true
+      ],
+      "1d_recolor_cmp_36": [
+        "recolour(paint(x, segment(x)))",
+        67.4,
+        true
+      ],
+      "1d_recolor_cmp_39": [
+        "recolour(paint(x, segment(x)))",
+        60.4,
+        true
+      ],
+      "1d_recolor_cmp_46": [
+        "recolour(paint(x, segment(x)))",
+        57.8,
+        true
+      ],
+      "1d_recolor_cmp_8": [
+        "recolour(paint(x, segment(x)))",
+        60.4,
+        true
+      ],
+      "1d_recolor_cmp_9": [
+        "recolour(paint(x, segment(x)))",
+        62.1,
+        true
+      ],
+      "1d_recolor_cnt_1": [
+        "paint(recolour(x), segment(x))",
+        141.1,
+        true
+      ],
+      "1d_recolor_cnt_15": [
+        "recolour(paint(x, scan(x)))",
+        115.5,
+        false
+      ],
+      "1d_recolor_cnt_21": [
+        "paint(shift(x), segment(x))",
+        105.5,
+        true
+      ],
+      "1d_recolor_cnt_28": [
+        "paint(shift(x), segment(x))",
+        143.1,
+        true
+      ],
+      "1d_recolor_cnt_38": [
+        "paint(x, segment(x))",
+        139.5,
+        true
+      ],
+      "1d_recolor_cnt_4": [
+        "paint(shift(x), segment(x))",
+        145.9,
+        true
+      ],
+      "1d_recolor_cnt_45": [
+        "recolour(paint(x, scan(x)))",
+        119.3,
+        false
+      ],
+      "1d_recolor_cnt_46": [
+        "paint(x, segment(x))",
+        137.6,
+        true
+      ],
+      "1d_recolor_cnt_48": [
+        "paint(shift(x), segment(x))",
+        120.4,
+        false
+      ],
+      "1d_recolor_cnt_9": [
+        "recolour(paint(x, scan(x)))",
+        107.7,
+        false
+      ],
+      "1d_recolor_oe_12": [
+        "recolour(paint(x, segment(x)))",
+        116.0,
+        true
+      ],
+      "1d_recolor_oe_14": [
+        "recolour(paint(x, scan(x)))",
+        134.5,
+        false
+      ],
+      "1d_recolor_oe_17": [
+        "paint(recolour(x), segment(x))",
+        98.1,
+        true
+      ],
+      "1d_recolor_oe_19": [
+        "paint(x, scan(x))",
+        97.4,
+        false
+      ],
+      "1d_recolor_oe_25": [
+        "recolour(paint(x, segment(x)))",
+        124.8,
+        true
+      ],
+      "1d_recolor_oe_27": [
+        "paint(x, segment(x))",
+        100.0,
+        true
+      ],
+      "1d_recolor_oe_32": [
+        "recolour(paint(x, segment(x)))",
+        80.8,
+        true
+      ],
+      "1d_recolor_oe_35": [
+        "recolour(paint(x, segment(x)))",
+        78.4,
+        true
+      ],
+      "1d_recolor_oe_43": [
+        "paint(x, segment(x))",
+        111.6,
+        false
+      ],
+      "1d_recolor_oe_46": [
+        "paint(x, scan(reflect(x)))",
+        125.6,
+        false
+      ],
+      "1d_scale_dp_10": [
+        "paint(x, local(shift(x)))",
+        105.4,
+        false
+      ],
+      "1d_scale_dp_15": [
+        "recolour(paint(x, scan(x)))",
+        56.8,
+        true
+      ],
+      "1d_scale_dp_20": [
+        "recolour(paint(x, local(x)))",
+        47.7,
+        false
+      ],
+      "1d_scale_dp_24": [
+        "shift(x)",
+        67.5,
+        false
+      ],
+      "1d_scale_dp_27": [
+        "paint(x, local(shift(x)))",
+        88.5,
+        false
+      ],
+      "1d_scale_dp_3": [
+        "recolour(paint(x, local(x)))",
+        87.8,
+        true
+      ],
+      "1d_scale_dp_34": [
+        "recolour(paint(x, local(x)))",
+        62.9,
+        false
+      ],
+      "1d_scale_dp_36": [
+        "shift(x)",
+        66.2,
+        false
+      ],
+      "1d_scale_dp_49": [
+        "paint(shift(x), scan(x))",
+        90.2,
+        true
+      ],
+      "1d_scale_dp_5": [
+        "paint(x, local(shift(x)))",
+        92.7,
+        false
+      ]
+    },
+    "new_boxes": [
+      [
+        "f0a : Grid -> Grid",
+        "recolour(paint(x, segment(x)))",
+        8
+      ],
+      [
+        "f0b : Grid -> Grid",
+        "recolour(paint(x, scan(x)))",
+        8
+      ]
+    ],
+    "seconds": 61.035585165023804
+  },
+  {
+    "iteration": 1,
+    "top1": 91,
+    "top3": 133,
+    "train": 106,
+    "tasks": 180,
+    "library": 9,
+    "candidates": 80,
+    "mean_dl": 79.39110077509433,
+    "family": {
+      "denoising_1c": [
+        6,
+        10
+      ],
+      "denoising_mc": [
+        1,
+        10
+      ],
+      "fill": [
+        8,
+        10
+      ],
+      "flip": [
+        0,
+        10
+      ],
+      "hollow": [
+        6,
+        10
+      ],
+      "mirror": [
+        1,
+        10
+      ],
+      "move_1p": [
+        9,
+        10
+      ],
+      "move_2p": [
+        10,
+        10
+      ],
+      "move_2p_dp": [
+        0,
+        10
+      ],
+      "move_3p": [
+        10,
+        10
+      ],
+      "move_dp": [
+        0,
+        10
+      ],
+      "padded_fill": [
+        10,
+        10
+      ],
+      "pcopy_1c": [
+        0,
+        10
+      ],
+      "pcopy_mc": [
+        3,
+        10
+      ],
+      "recolor_cmp": [
+        10,
+        10
+      ],
+      "recolor_cnt": [
+        8,
+        10
+      ],
+      "recolor_oe": [
+        6,
+        10
+      ],
+      "scale_dp": [
+        3,
+        10
+      ]
+    },
+    "solutions": {
+      "1d_denoising_1c_16": [
+        "shift(x)",
+        70.6,
+        false
+      ],
+      "1d_denoising_1c_22": [
+        "paint(x, local(x))",
+        55.4,
+        true
+      ],
+      "1d_denoising_1c_25": [
+        "shift(x)",
+        70.5,
+        true
+      ],
+      "1d_denoising_1c_27": [
+        "shift(x)",
+        67.6,
+        false
+      ],
+      "1d_denoising_1c_31": [
+        "paint(x, local(x))",
+        54.5,
+        true
+      ],
+      "1d_denoising_1c_37": [
+        "paint(x, local(x))",
+        55.1,
+        true
+      ],
+      "1d_denoising_1c_39": [
+        "paint(x, local(x))",
+        55.5,
+        true
+      ],
+      "1d_denoising_1c_44": [
+        "shift(x)",
+        70.1,
+        false
+      ],
+      "1d_denoising_1c_48": [
+        "paint(shift(x), local(x))",
+        71.0,
+        true
+      ],
+      "1d_denoising_1c_49": [
+        "shift(x)",
+        68.7,
+        false
+      ],
+      "1d_denoising_mc_0": [
+        "shift(x)",
+        58.2,
+        false
+      ],
+      "1d_denoising_mc_11": [
+        "shift(x)",
+        61.0,
+        false
+      ],
+      "1d_denoising_mc_15": [
+        "paint(shift(x), local(x))",
+        60.5,
+        true
+      ],
+      "1d_denoising_mc_21": [
+        "shift(x)",
+        60.8,
+        false
+      ],
+      "1d_denoising_mc_25": [
+        "shift(x)",
+        62.2,
+        false
+      ],
+      "1d_denoising_mc_30": [
+        "shift(x)",
+        64.7,
+        false
+      ],
+      "1d_denoising_mc_36": [
+        "shift(x)",
+        72.6,
+        false
+      ],
+      "1d_denoising_mc_44": [
+        "shift(x)",
+        58.6,
+        false
+      ],
+      "1d_denoising_mc_5": [
+        "shift(x)",
+        57.6,
+        false
+      ],
+      "1d_denoising_mc_6": [
+        "shift(x)",
+        54.7,
+        false
+      ],
+      "1d_fill_10": [
+        "recolour(paint(x, scan(x)))",
+        45.9,
+        true
+      ],
+      "1d_fill_14": [
+        "f0b(f0a(x))",
+        67.0,
+        true
+      ],
+      "1d_fill_19": [
+        "f0b(f0a(x))",
+        67.3,
+        true
+      ],
+      "1d_fill_28": [
+        "shift(x)",
+        62.6,
+        false
+      ],
+      "1d_fill_30": [
+        "f0b(f0a(x))",
+        63.9,
+        true
+      ],
+      "1d_fill_32": [
+        "f0b(f0a(x))",
+        63.5,
+        true
+      ],
+      "1d_fill_42": [
+        "f0b(recolour(x))",
+        69.6,
+        true
+      ],
+      "1d_fill_46": [
+        "f0b(recolour(x))",
+        79.0,
+        true
+      ],
+      "1d_fill_49": [
+        "shift(x)",
+        67.4,
+        false
+      ],
+      "1d_fill_9": [
+        "f0b(f0a(x))",
+        63.7,
+        true
+      ],
+      "1d_flip_1": [
+        "shift(paint(x, scan(x)))",
+        111.5,
+        false
+      ],
+      "1d_flip_12": [
+        "paint(shift(x), scan(x))",
+        128.7,
+        false
+      ],
+      "1d_flip_13": [
+        "paint(recolour(x), scan(x))",
+        107.6,
+        false
+      ],
+      "1d_flip_2": [
+        "paint(shift(x), local(x))",
+        90.1,
+        false
+      ],
+      "1d_flip_27": [
+        "paint(shift(x), scan(x))",
+        104.8,
+        false
+      ],
+      "1d_flip_28": [
+        "paint(x, segment(x))",
+        120.1,
+        false
+      ],
+      "1d_flip_36": [
+        "f0b(paint(x, local(x)))",
+        108.6,
+        false
+      ],
+      "1d_flip_38": [
+        "paint(shift(x), scan(x))",
+        122.6,
+        false
+      ],
+      "1d_flip_40": [
+        "shift(x)",
+        120.0,
+        false
+      ],
+      "1d_flip_42": [
+        "paint(shift(x), scan(x))",
+        108.7,
+        false
+      ],
+      "1d_hollow_0": [
+        "paint(x, segment(x))",
+        111.4,
+        false
+      ],
+      "1d_hollow_10": [
+        "paint(shift(x), segment(x))",
+        101.5,
+        true
+      ],
+      "1d_hollow_17": [
+        "shift(paint(x, segment(x)))",
+        101.8,
+        false
+      ],
+      "1d_hollow_23": [
+        "paint(x, segment(x))",
+        92.9,
+        true
+      ],
+      "1d_hollow_24": [
+        "recolour(paint(x, segment(x)))",
+        84.3,
+        true
+      ],
+      "1d_hollow_30": [
+        "recolour(paint(x, local(x)))",
+        88.9,
+        true
+      ],
+      "1d_hollow_33": [
+        "paint(shift(x), scan(x))",
+        90.8,
+        true
+      ],
+      "1d_hollow_39": [
+        "paint(shift(x), segment(x))",
+        94.3,
+        false
+      ],
+      "1d_hollow_40": [
+        "recolour(paint(x, segment(x)))",
+        82.5,
+        false
+      ],
+      "1d_hollow_43": [
+        "recolour(paint(x, scan(x)))",
+        63.9,
+        true
+      ],
+      "1d_mirror_1": [
+        "reflect(shift(x))",
+        86.7,
+        false
+      ],
+      "1d_mirror_13": [
+        "paint(x, segment(x))",
+        183.7,
+        false
+      ],
+      "1d_mirror_14": [
+        "f0b(paint(x, scan(x)))",
+        159.8,
+        false
+      ],
+      "1d_mirror_23": [
+        "reflect(shift(x))",
+        141.1,
+        false
+      ],
+      "1d_mirror_27": [
+        "paint(x, scan(shift(x)))",
+        164.5,
+        false
+      ],
+      "1d_mirror_28": [
+        "reflect(shift(x))",
+        86.8,
+        true
+      ],
+      "1d_mirror_37": [
+        "reflect(shift(x))",
+        86.7,
+        false
+      ],
+      "1d_mirror_42": [
+        "reflect(shift(x))",
+        176.5,
+        false
+      ],
+      "1d_mirror_45": [
+        "shift(reflect(x))",
+        80.3,
+        false
+      ],
+      "1d_mirror_47": [
+        "paint(x, segment(x))",
+        188.5,
+        false
+      ],
+      "1d_move_1p_10": [
+        "shift(x)",
+        52.5,
+        true
+      ],
+      "1d_move_1p_12": [
+        "shift(x)",
+        53.0,
+        true
+      ],
+      "1d_move_1p_16": [
+        "shift(x)",
+        53.1,
+        true
+      ],
+      "1d_move_1p_18": [
+        "paint(shift(x), local(x))",
+        52.2,
+        false
+      ],
+      "1d_move_1p_19": [
+        "shift(x)",
+        54.7,
+        true
+      ],
+      "1d_move_1p_3": [
+        "shift(x)",
+        52.4,
+        true
+      ],
+      "1d_move_1p_35": [
+        "shift(x)",
+        52.1,
+        true
+      ],
+      "1d_move_1p_36": [
+        "shift(x)",
+        54.3,
+        true
+      ],
+      "1d_move_1p_49": [
+        "shift(x)",
+        52.4,
+        true
+      ],
+      "1d_move_1p_8": [
+        "shift(x)",
+        54.8,
+        true
+      ],
+      "1d_move_2p_16": [
+        "shift(x)",
+        47.4,
+        true
+      ],
+      "1d_move_2p_25": [
+        "shift(x)",
+        48.1,
+        true
+      ],
+      "1d_move_2p_32": [
+        "shift(x)",
+        48.1,
+        true
+      ],
+      "1d_move_2p_36": [
+        "shift(x)",
+        48.0,
+        true
+      ],
+      "1d_move_2p_40": [
+        "shift(x)",
+        48.6,
+        true
+      ],
+      "1d_move_2p_41": [
+        "shift(x)",
+        47.6,
+        true
+      ],
+      "1d_move_2p_44": [
+        "shift(x)",
+        54.0,
+        true
+      ],
+      "1d_move_2p_45": [
+        "shift(x)",
+        47.9,
+        true
+      ],
+      "1d_move_2p_47": [
+        "shift(x)",
+        47.5,
+        true
+      ],
+      "1d_move_2p_5": [
+        "shift(x)",
+        45.8,
+        true
+      ],
+      "1d_move_2p_dp_1": [
+        "shift(x)",
+        68.3,
+        false
+      ],
+      "1d_move_2p_dp_11": [
+        "shift(x)",
+        69.9,
+        false
+      ],
+      "1d_move_2p_dp_18": [
+        "shift(x)",
+        66.3,
+        false
+      ],
+      "1d_move_2p_dp_21": [
+        "shift(x)",
+        66.9,
+        false
+      ],
+      "1d_move_2p_dp_30": [
+        "shift(x)",
+        65.2,
+        false
+      ],
+      "1d_move_2p_dp_38": [
+        "shift(x)",
+        66.3,
+        false
+      ],
+      "1d_move_2p_dp_42": [
+        "shift(x)",
+        68.0,
+        false
+      ],
+      "1d_move_2p_dp_47": [
+        "shift(x)",
+        66.9,
+        false
+      ],
+      "1d_move_2p_dp_48": [
+        "shift(x)",
+        69.9,
+        false
+      ],
+      "1d_move_2p_dp_7": [
+        "shift(x)",
+        59.4,
+        false
+      ],
+      "1d_move_3p_17": [
+        "shift(x)",
+        53.5,
+        true
+      ],
+      "1d_move_3p_18": [
+        "shift(x)",
+        53.9,
+        true
+      ],
+      "1d_move_3p_2": [
+        "shift(x)",
+        54.2,
+        true
+      ],
+      "1d_move_3p_31": [
+        "shift(x)",
+        53.9,
+        true
+      ],
+      "1d_move_3p_32": [
+        "shift(x)",
+        53.3,
+        true
+      ],
+      "1d_move_3p_33": [
+        "shift(x)",
+        53.6,
+        true
+      ],
+      "1d_move_3p_34": [
+        "shift(x)",
+        52.7,
+        true
+      ],
+      "1d_move_3p_37": [
+        "shift(x)",
+        52.8,
+        true
+      ],
+      "1d_move_3p_42": [
+        "shift(x)",
+        53.6,
+        true
+      ],
+      "1d_move_3p_9": [
+        "shift(x)",
+        54.3,
+        true
+      ],
+      "1d_move_dp_1": [
+        "shift(shift(x))",
+        127.5,
+        false
+      ],
+      "1d_move_dp_13": [
+        "recolour(paint(x, local(x)))",
+        149.3,
+        false
+      ],
+      "1d_move_dp_18": [
+        "shift(x)",
+        105.4,
+        false
+      ],
+      "1d_move_dp_2": [
+        "shift(shift(shift(x)))",
+        185.9,
+        false
+      ],
+      "1d_move_dp_28": [
+        "shift(shift(x))",
+        136.7,
+        false
+      ],
+      "1d_move_dp_38": [
+        "paint(x, scan(shift(x)))",
+        154.2,
+        false
+      ],
+      "1d_move_dp_44": [
+        "shift(x)",
+        62.1,
+        false
+      ],
+      "1d_move_dp_49": [
+        "shift(reflect(x))",
+        164.7,
+        false
+      ],
+      "1d_move_dp_5": [
+        "shift(shift(x))",
+        155.2,
+        false
+      ],
+      "1d_move_dp_8": [
+        "shift(x)",
+        63.2,
+        false
+      ],
+      "1d_padded_fill_18": [
+        "paint(f0b(x), local(x))",
+        87.6,
+        true
+      ],
+      "1d_padded_fill_22": [
+        "f0b(paint(x, scan(x)))",
+        67.9,
+        true
+      ],
+      "1d_padded_fill_23": [
+        "recolour(paint(x, scan(x)))",
+        63.4,
+        true
+      ],
+      "1d_padded_fill_27": [
+        "f0b(paint(x, scan(x)))",
+        60.3,
+        true
+      ],
+      "1d_padded_fill_32": [
+        "recolour(paint(x, scan(x)))",
+        81.9,
+        true
+      ],
+      "1d_padded_fill_40": [
+        "recolour(paint(x, scan(x)))",
+        62.9,
+        true
+      ],
+      "1d_padded_fill_42": [
+        "paint(x, segment(f0b(x)))",
+        80.9,
+        true
+      ],
+      "1d_padded_fill_6": [
+        "f0b(recolour(x))",
+        94.4,
+        true
+      ],
+      "1d_padded_fill_8": [
+        "recolour(paint(x, scan(x)))",
+        57.1,
+        true
+      ],
+      "1d_padded_fill_9": [
+        "recolour(paint(x, scan(x)))",
+        50.1,
+        true
+      ],
+      "1d_pcopy_1c_0": [
+        "shift(x)",
+        85.5,
+        false
+      ],
+      "1d_pcopy_1c_18": [
+        "shift(x)",
+        91.7,
+        false
+      ],
+      "1d_pcopy_1c_2": [
+        "shift(x)",
+        102.2,
+        false
+      ],
+      "1d_pcopy_1c_21": [
+        "shift(x)",
+        92.2,
+        false
+      ],
+      "1d_pcopy_1c_22": [
+        "shift(x)",
+        92.8,
+        false
+      ],
+      "1d_pcopy_1c_24": [
+        "shift(x)",
+        91.6,
+        false
+      ],
+      "1d_pcopy_1c_32": [
+        "shift(x)",
+        92.0,
+        false
+      ],
+      "1d_pcopy_1c_36": [
+        "shift(x)",
+        97.9,
+        false
+      ],
+      "1d_pcopy_1c_4": [
+        "shift(x)",
+        91.1,
+        false
+      ],
+      "1d_pcopy_1c_49": [
+        "shift(x)",
+        91.7,
+        false
+      ],
+      "1d_pcopy_mc_12": [
+        "paint(f0b(x), local(x))",
+        50.5,
+        true
+      ],
+      "1d_pcopy_mc_21": [
+        "paint(shift(x), local(x))",
+        82.7,
+        true
+      ],
+      "1d_pcopy_mc_24": [
+        "shift(x)",
+        86.6,
+        false
+      ],
+      "1d_pcopy_mc_26": [
+        "paint(f0b(x), local(x))",
+        53.8,
+        true
+      ],
+      "1d_pcopy_mc_27": [
+        "shift(x)",
+        75.5,
+        false
+      ],
+      "1d_pcopy_mc_30": [
+        "paint(f0a(x), local(x))",
+        57.7,
+        false
+      ],
+      "1d_pcopy_mc_32": [
+        "shift(x)",
+        86.9,
+        false
+      ],
+      "1d_pcopy_mc_33": [
+        "shift(x)",
+        93.2,
+        false
+      ],
+      "1d_pcopy_mc_36": [
+        "shift(x)",
+        75.5,
+        false
+      ],
+      "1d_pcopy_mc_49": [
+        "paint(f0b(x), local(x))",
+        58.0,
+        false
+      ],
+      "1d_recolor_cmp_10": [
+        "f0a(paint(x, local(x)))",
+        60.8,
+        true
+      ],
+      "1d_recolor_cmp_11": [
+        "recolour(paint(x, segment(x)))",
+        67.1,
+        true
+      ],
+      "1d_recolor_cmp_18": [
+        "f0a(paint(x, segment(x)))",
+        64.2,
+        true
+      ],
+      "1d_recolor_cmp_3": [
+        "f0a(paint(x, segment(x)))",
+        64.4,
+        true
+      ],
+      "1d_recolor_cmp_34": [
+        "recolour(paint(x, segment(x)))",
+        58.2,
+        true
+      ],
+      "1d_recolor_cmp_36": [
+        "f0a(paint(x, scan(x)))",
+        49.8,
+        true
+      ],
+      "1d_recolor_cmp_39": [
+        "recolour(paint(x, segment(x)))",
+        59.8,
+        true
+      ],
+      "1d_recolor_cmp_46": [
+        "recolour(paint(x, segment(x)))",
+        57.2,
+        true
+      ],
+      "1d_recolor_cmp_8": [
+        "f0a(paint(x, local(x)))",
+        52.6,
+        true
+      ],
+      "1d_recolor_cmp_9": [
+        "recolour(paint(x, segment(x)))",
+        61.5,
+        true
+      ],
+      "1d_recolor_cnt_1": [
+        "f0a(paint(x, scan(x)))",
+        78.7,
+        true
+      ],
+      "1d_recolor_cnt_15": [
+        "f0a(paint(x, local(x)))",
+        73.7,
+        true
+      ],
+      "1d_recolor_cnt_21": [
+        "f0a(recolour(x))",
+        99.6,
+        true
+      ],
+      "1d_recolor_cnt_28": [
+        "f0a(paint(x, scan(x)))",
+        64.1,
+        false
+      ],
+      "1d_recolor_cnt_38": [
+        "f0a(paint(x, segment(x)))",
+        104.9,
+        true
+      ],
+      "1d_recolor_cnt_4": [
+        "f0a(paint(x, scan(x)))",
+        113.3,
+        true
+      ],
+      "1d_recolor_cnt_45": [
+        "f0a(x)",
+        97.9,
+        true
+      ],
+      "1d_recolor_cnt_46": [
+        "f0a(paint(x, scan(x)))",
+        74.1,
+        true
+      ],
+      "1d_recolor_cnt_48": [
+        "f0a(x)",
+        99.6,
+        false
+      ],
+      "1d_recolor_cnt_9": [
+        "paint(f0a(x), segment(x))",
+        97.4,
+        true
+      ],
+      "1d_recolor_oe_12": [
+        "f0a(paint(x, local(x)))",
+        97.6,
+        false
+      ],
+      "1d_recolor_oe_14": [
+        "recolour(f0a(x))",
+        78.7,
+        false
+      ],
+      "1d_recolor_oe_17": [
+        "paint(recolour(x), segment(x))",
+        97.5,
+        true
+      ],
+      "1d_recolor_oe_19": [
+        "paint(x, scan(x))",
+        96.9,
+        false
+      ],
+      "1d_recolor_oe_25": [
+        "f0a(paint(x, scan(x)))",
+        76.6,
+        true
+      ],
+      "1d_recolor_oe_27": [
+        "paint(x, segment(f0b(x)))",
+        74.2,
+        true
+      ],
+      "1d_recolor_oe_32": [
+        "recolour(paint(x, segment(x)))",
+        80.2,
+        true
+      ],
+      "1d_recolor_oe_35": [
+        "recolour(paint(x, segment(x)))",
+        77.8,
+        true
+      ],
+      "1d_recolor_oe_43": [
+        "f0a(paint(x, local(x)))",
+        59.4,
+        false
+      ],
+      "1d_recolor_oe_46": [
+        "f0a(paint(x, scan(x)))",
+        120.4,
+        true
+      ],
+      "1d_scale_dp_10": [
+        "paint(x, local(shift(x)))",
+        105.4,
+        false
+      ],
+      "1d_scale_dp_15": [
+        "recolour(paint(x, scan(x)))",
+        56.6,
+        true
+      ],
+      "1d_scale_dp_20": [
+        "recolour(paint(x, local(x)))",
+        48.1,
+        false
+      ],
+      "1d_scale_dp_24": [
+        "shift(x)",
+        67.4,
+        false
+      ],
+      "1d_scale_dp_27": [
+        "paint(x, local(shift(x)))",
+        88.5,
+        false
+      ],
+      "1d_scale_dp_3": [
+        "paint(shift(x), scan(x))",
+        87.5,
+        true
+      ],
+      "1d_scale_dp_34": [
+        "recolour(paint(x, local(x)))",
+        63.2,
+        false
+      ],
+      "1d_scale_dp_36": [
+        "shift(x)",
+        66.1,
+        false
+      ],
+      "1d_scale_dp_49": [
+        "paint(shift(x), scan(x))",
+        89.7,
+        true
+      ],
+      "1d_scale_dp_5": [
+        "paint(x, local(shift(x)))",
+        92.7,
+        false
+      ]
+    },
+    "new_boxes": [
+      [
+        "f1a : Grid -> Grid",
+        "paint(x, scan(x))",
+        5
+      ],
+      [
+        "f1b : Grid -> Grid",
+        "paint(x, segment(x))",
+        5
+      ]
+    ],
+    "seconds": 129.6797912120819
+  },
+  {
+    "iteration": 2,
+    "top1": 96,
+    "top3": 138,
+    "train": 112,
+    "tasks": 180,
+    "library": 11,
+    "candidates": 80,
+    "mean_dl": 79.0068779770463,
+    "family": {
+      "denoising_1c": [
+        7,
+        10
+      ],
+      "denoising_mc": [
+        2,
+        10
+      ],
+      "fill": [
+        8,
+        10
+      ],
+      "flip": [
+        0,
+        10
+      ],
+      "hollow": [
+        8,
+        10
+      ],
+      "mirror": [
+        0,
+        10
+      ],
+      "move_1p": [
+        9,
+        10
+      ],
+      "move_2p": [
+        10,
+        10
+      ],
+      "move_2p_dp": [
+        1,
+        10
+      ],
+      "move_3p": [
+        10,
+        10
+      ],
+      "move_dp": [
+        0,
+        10
+      ],
+      "padded_fill": [
+        10,
+        10
+      ],
+      "pcopy_1c": [
+        0,
+        10
+      ],
+      "pcopy_mc": [
+        3,
+        10
+      ],
+      "recolor_cmp": [
+        10,
+        10
+      ],
+      "recolor_cnt": [
+        8,
+        10
+      ],
+      "recolor_oe": [
+        6,
+        10
+      ],
+      "scale_dp": [
+        4,
+        10
+      ]
+    },
+    "solutions": {
+      "1d_denoising_1c_16": [
+        "f1b(shift(x))",
+        65.6,
+        true
+      ],
+      "1d_denoising_1c_22": [
+        "paint(x, local(x))",
+        54.9,
+        true
+      ],
+      "1d_denoising_1c_25": [
+        "shift(x)",
+        70.8,
+        true
+      ],
+      "1d_denoising_1c_27": [
+        "shift(x)",
+        67.9,
+        false
+      ],
+      "1d_denoising_1c_31": [
+        "paint(x, local(x))",
+        54.0,
+        true
+      ],
+      "1d_denoising_1c_37": [
+        "paint(x, local(x))",
+        54.6,
+        true
+      ],
+      "1d_denoising_1c_39": [
+        "paint(x, local(x))",
+        55.0,
+        true
+      ],
+      "1d_denoising_1c_44": [
+        "shift(x)",
+        70.4,
+        false
+      ],
+      "1d_denoising_1c_48": [
+        "paint(shift(x), local(x))",
+        70.9,
+        true
+      ],
+      "1d_denoising_1c_49": [
+        "shift(x)",
+        69.0,
+        false
+      ],
+      "1d_denoising_mc_0": [
+        "shift(x)",
+        58.6,
+        false
+      ],
+      "1d_denoising_mc_11": [
+        "shift(x)",
+        61.3,
+        false
+      ],
+      "1d_denoising_mc_15": [
+        "paint(shift(x), local(x))",
+        60.3,
+        true
+      ],
+      "1d_denoising_mc_21": [
+        "shift(x)",
+        61.1,
+        false
+      ],
+      "1d_denoising_mc_25": [
+        "shift(x)",
+        62.5,
+        false
+      ],
+      "1d_denoising_mc_30": [
+        "shift(x)",
+        65.0,
+        false
+      ],
+      "1d_denoising_mc_36": [
+        "f1b(shift(x))",
+        68.0,
+        true
+      ],
+      "1d_denoising_mc_44": [
+        "shift(x)",
+        58.9,
+        false
+      ],
+      "1d_denoising_mc_5": [
+        "shift(x)",
+        57.9,
+        false
+      ],
+      "1d_denoising_mc_6": [
+        "shift(x)",
+        55.0,
+        false
+      ],
+      "1d_fill_10": [
+        "recolour(f1a(x))",
+        46.2,
+        true
+      ],
+      "1d_fill_14": [
+        "f0b(f0a(x))",
+        66.7,
+        true
+      ],
+      "1d_fill_19": [
+        "f0b(f0a(x))",
+        66.9,
+        true
+      ],
+      "1d_fill_28": [
+        "shift(x)",
+        62.9,
+        false
+      ],
+      "1d_fill_30": [
+        "f0b(f0a(x))",
+        63.5,
+        true
+      ],
+      "1d_fill_32": [
+        "f0b(f0a(x))",
+        63.1,
+        true
+      ],
+      "1d_fill_42": [
+        "f0b(recolour(x))",
+        70.1,
+        true
+      ],
+      "1d_fill_46": [
+        "f0b(x)",
+        79.4,
+        true
+      ],
+      "1d_fill_49": [
+        "shift(x)",
+        67.8,
+        false
+      ],
+      "1d_fill_9": [
+        "f0b(f0a(x))",
+        63.3,
+        true
+      ],
+      "1d_flip_1": [
+        "shift(f1a(x))",
+        111.5,
+        false
+      ],
+      "1d_flip_12": [
+        "paint(shift(x), scan(x))",
+        129.2,
+        false
+      ],
+      "1d_flip_13": [
+        "paint(recolour(x), scan(x))",
+        108.5,
+        false
+      ],
+      "1d_flip_2": [
+        "paint(shift(x), local(x))",
+        89.9,
+        false
+      ],
+      "1d_flip_27": [
+        "paint(shift(x), scan(x))",
+        105.3,
+        false
+      ],
+      "1d_flip_28": [
+        "paint(x, segment(x))",
+        120.7,
+        false
+      ],
+      "1d_flip_36": [
+        "f0b(paint(x, local(x)))",
+        108.0,
+        false
+      ],
+      "1d_flip_38": [
+        "f1a(f1a(x))",
+        108.1,
+        false
+      ],
+      "1d_flip_40": [
+        "shift(x)",
+        120.4,
+        false
+      ],
+      "1d_flip_42": [
+        "paint(shift(x), scan(x))",
+        109.2,
+        false
+      ],
+      "1d_hollow_0": [
+        "f1b(f1a(x))",
+        98.3,
+        true
+      ],
+      "1d_hollow_10": [
+        "paint(shift(x), segment(x))",
+        102.5,
+        true
+      ],
+      "1d_hollow_17": [
+        "f1b(f1a(x))",
+        81.6,
+        true
+      ],
+      "1d_hollow_23": [
+        "f1b(f1a(x))",
+        69.2,
+        true
+      ],
+      "1d_hollow_24": [
+        "recolour(f1b(x))",
+        84.8,
+        true
+      ],
+      "1d_hollow_30": [
+        "f1b(f1a(x))",
+        69.4,
+        true
+      ],
+      "1d_hollow_33": [
+        "paint(shift(x), scan(x))",
+        91.3,
+        true
+      ],
+      "1d_hollow_39": [
+        "f1b(shift(x))",
+        84.5,
+        false
+      ],
+      "1d_hollow_40": [
+        "recolour(f1b(x))",
+        83.0,
+        false
+      ],
+      "1d_hollow_43": [
+        "recolour(f1a(x))",
+        64.3,
+        true
+      ],
+      "1d_mirror_1": [
+        "f1a(paint(x, local(x)))",
+        164.0,
+        false
+      ],
+      "1d_mirror_13": [
+        "f1b(recolour(x))",
+        174.6,
+        false
+      ],
+      "1d_mirror_14": [
+        "f1b(f1a(x))",
+        151.6,
+        false
+      ],
+      "1d_mirror_23": [
+        "f1b(f1a(x))",
+        147.3,
+        false
+      ],
+      "1d_mirror_27": [
+        "paint(x, scan(shift(x)))",
+        165.0,
+        false
+      ],
+      "1d_mirror_28": [
+        "f1b(recolour(x))",
+        181.3,
+        false
+      ],
+      "1d_mirror_37": [
+        "f1b(recolour(x))",
+        118.3,
+        false
+      ],
+      "1d_mirror_42": [
+        "f1a(paint(x, local(x)))",
+        144.3,
+        false
+      ],
+      "1d_mirror_45": [
+        "paint(x, local(shift(x)))",
+        121.9,
+        false
+      ],
+      "1d_mirror_47": [
+        "f1b(recolour(x))",
+        167.3,
+        false
+      ],
+      "1d_move_1p_10": [
+        "shift(x)",
+        52.8,
+        true
+      ],
+      "1d_move_1p_12": [
+        "shift(x)",
+        53.3,
+        true
+      ],
+      "1d_move_1p_16": [
+        "shift(x)",
+        53.4,
+        true
+      ],
+      "1d_move_1p_18": [
+        "paint(shift(x), local(x))",
+        52.0,
+        false
+      ],
+      "1d_move_1p_19": [
+        "shift(x)",
+        55.0,
+        true
+      ],
+      "1d_move_1p_3": [
+        "shift(x)",
+        52.7,
+        true
+      ],
+      "1d_move_1p_35": [
+        "shift(x)",
+        52.4,
+        true
+      ],
+      "1d_move_1p_36": [
+        "shift(x)",
+        54.6,
+        true
+      ],
+      "1d_move_1p_49": [
+        "shift(x)",
+        52.7,
+        true
+      ],
+      "1d_move_1p_8": [
+        "shift(x)",
+        55.1,
+        true
+      ],
+      "1d_move_2p_16": [
+        "shift(x)",
+        47.8,
+        true
+      ],
+      "1d_move_2p_25": [
+        "shift(x)",
+        48.4,
+        true
+      ],
+      "1d_move_2p_32": [
+        "shift(x)",
+        48.4,
+        true
+      ],
+      "1d_move_2p_36": [
+        "shift(x)",
+        48.3,
+        true
+      ],
+      "1d_move_2p_40": [
+        "shift(x)",
+        49.0,
+        true
+      ],
+      "1d_move_2p_41": [
+        "shift(x)",
+        47.9,
+        true
+      ],
+      "1d_move_2p_44": [
+        "shift(x)",
+        54.4,
+        true
+      ],
+      "1d_move_2p_45": [
+        "shift(x)",
+        48.2,
+        true
+      ],
+      "1d_move_2p_47": [
+        "shift(x)",
+        47.9,
+        true
+      ],
+      "1d_move_2p_5": [
+        "shift(x)",
+        46.2,
+        true
+      ],
+      "1d_move_2p_dp_1": [
+        "f1a(paint(x, local(x)))",
+        51.4,
+        true
+      ],
+      "1d_move_2p_dp_11": [
+        "shift(x)",
+        70.2,
+        false
+      ],
+      "1d_move_2p_dp_18": [
+        "shift(x)",
+        66.6,
+        false
+      ],
+      "1d_move_2p_dp_21": [
+        "shift(x)",
+        67.2,
+        false
+      ],
+      "1d_move_2p_dp_30": [
+        "shift(x)",
+        65.5,
+        false
+      ],
+      "1d_move_2p_dp_38": [
+        "f1a(paint(x, local(x)))",
+        51.6,
+        false
+      ],
+      "1d_move_2p_dp_42": [
+        "shift(x)",
+        68.3,
+        false
+      ],
+      "1d_move_2p_dp_47": [
+        "shift(x)",
+        67.2,
+        false
+      ],
+      "1d_move_2p_dp_48": [
+        "shift(x)",
+        70.2,
+        false
+      ],
+      "1d_move_2p_dp_7": [
+        "shift(x)",
+        59.7,
+        false
+      ],
+      "1d_move_3p_17": [
+        "shift(x)",
+        53.8,
+        true
+      ],
+      "1d_move_3p_18": [
+        "shift(x)",
+        54.2,
+        true
+      ],
+      "1d_move_3p_2": [
+        "shift(x)",
+        54.5,
+        true
+      ],
+      "1d_move_3p_31": [
+        "shift(x)",
+        54.2,
+        true
+      ],
+      "1d_move_3p_32": [
+        "shift(x)",
+        53.7,
+        true
+      ],
+      "1d_move_3p_33": [
+        "shift(x)",
+        53.9,
+        true
+      ],
+      "1d_move_3p_34": [
+        "shift(x)",
+        53.0,
+        true
+      ],
+      "1d_move_3p_37": [
+        "shift(x)",
+        53.1,
+        true
+      ],
+      "1d_move_3p_42": [
+        "shift(x)",
+        53.9,
+        true
+      ],
+      "1d_move_3p_9": [
+        "shift(x)",
+        54.6,
+        true
+      ],
+      "1d_move_dp_1": [
+        "shift(shift(x))",
+        128.2,
+        false
+      ],
+      "1d_move_dp_13": [
+        "recolour(paint(x, local(x)))",
+        149.5,
+        false
+      ],
+      "1d_move_dp_18": [
+        "shift(x)",
+        105.7,
+        false
+      ],
+      "1d_move_dp_2": [
+        "shift(shift(shift(x)))",
+        186.9,
+        false
+      ],
+      "1d_move_dp_28": [
+        "shift(shift(x))",
+        137.3,
+        false
+      ],
+      "1d_move_dp_38": [
+        "paint(x, scan(shift(x)))",
+        154.7,
+        false
+      ],
+      "1d_move_dp_44": [
+        "shift(x)",
+        62.5,
+        false
+      ],
+      "1d_move_dp_49": [
+        "f1a(f0b(x))",
+        172.4,
+        false
+      ],
+      "1d_move_dp_5": [
+        "shift(shift(x))",
+        155.9,
+        false
+      ],
+      "1d_move_dp_8": [
+        "shift(x)",
+        63.6,
+        false
+      ],
+      "1d_padded_fill_18": [
+        "paint(f0b(x), local(x))",
+        87.0,
+        true
+      ],
+      "1d_padded_fill_22": [
+        "f0b(f1a(x))",
+        67.4,
+        true
+      ],
+      "1d_padded_fill_23": [
+        "recolour(f1a(x))",
+        63.7,
+        true
+      ],
+      "1d_padded_fill_27": [
+        "f0b(f1a(x))",
+        59.8,
+        true
+      ],
+      "1d_padded_fill_32": [
+        "f1a(f0b(x))",
+        51.8,
+        true
+      ],
+      "1d_padded_fill_40": [
+        "recolour(f1a(x))",
+        63.2,
+        true
+      ],
+      "1d_padded_fill_42": [
+        "recolour(f1a(x))",
+        82.5,
+        true
+      ],
+      "1d_padded_fill_6": [
+        "f1a(f0b(x))",
+        40.4,
+        true
+      ],
+      "1d_padded_fill_8": [
+        "f1a(f0b(x))",
+        57.0,
+        true
+      ],
+      "1d_padded_fill_9": [
+        "recolour(f1a(x))",
+        50.5,
+        true
+      ],
+      "1d_pcopy_1c_0": [
+        "shift(x)",
+        85.9,
+        false
+      ],
+      "1d_pcopy_1c_18": [
+        "shift(x)",
+        92.0,
+        false
+      ],
+      "1d_pcopy_1c_2": [
+        "shift(x)",
+        102.5,
+        false
+      ],
+      "1d_pcopy_1c_21": [
+        "shift(x)",
+        92.5,
+        false
+      ],
+      "1d_pcopy_1c_22": [
+        "shift(x)",
+        93.1,
+        false
+      ],
+      "1d_pcopy_1c_24": [
+        "shift(x)",
+        91.9,
+        false
+      ],
+      "1d_pcopy_1c_32": [
+        "shift(x)",
+        92.4,
+        false
+      ],
+      "1d_pcopy_1c_36": [
+        "shift(x)",
+        98.2,
+        false
+      ],
+      "1d_pcopy_1c_4": [
+        "shift(x)",
+        91.5,
+        false
+      ],
+      "1d_pcopy_1c_49": [
+        "shift(x)",
+        92.0,
+        false
+      ],
+      "1d_pcopy_mc_12": [
+        "paint(f0b(x), local(x))",
+        49.9,
+        true
+      ],
+      "1d_pcopy_mc_21": [
+        "paint(shift(x), local(x))",
+        82.5,
+        true
+      ],
+      "1d_pcopy_mc_24": [
+        "shift(x)",
+        87.0,
+        false
+      ],
+      "1d_pcopy_mc_26": [
+        "paint(f0b(x), local(x))",
+        53.2,
+        true
+      ],
+      "1d_pcopy_mc_27": [
+        "shift(x)",
+        75.8,
+        false
+      ],
+      "1d_pcopy_mc_30": [
+        "paint(f0a(x), local(x))",
+        57.0,
+        false
+      ],
+      "1d_pcopy_mc_32": [
+        "shift(x)",
+        87.2,
+        false
+      ],
+      "1d_pcopy_mc_33": [
+        "shift(x)",
+        93.5,
+        false
+      ],
+      "1d_pcopy_mc_36": [
+        "f1a(f0b(x))",
+        64.9,
+        false
+      ],
+      "1d_pcopy_mc_49": [
+        "paint(f0b(x), local(x))",
+        57.4,
+        false
+      ],
+      "1d_recolor_cmp_10": [
+        "f0a(paint(x, local(x)))",
+        60.1,
+        true
+      ],
+      "1d_recolor_cmp_11": [
+        "recolour(f1b(x))",
+        67.9,
+        true
+      ],
+      "1d_recolor_cmp_18": [
+        "f0a(f1b(x))",
+        63.3,
+        true
+      ],
+      "1d_recolor_cmp_3": [
+        "f0a(f1b(x))",
+        63.6,
+        true
+      ],
+      "1d_recolor_cmp_34": [
+        "recolour(f1b(x))",
+        58.9,
+        true
+      ],
+      "1d_recolor_cmp_36": [
+        "f0a(f1a(x))",
+        49.2,
+        true
+      ],
+      "1d_recolor_cmp_39": [
+        "recolour(f1b(x))",
+        60.5,
+        true
+      ],
+      "1d_recolor_cmp_46": [
+        "recolour(f1b(x))",
+        58.0,
+        true
+      ],
+      "1d_recolor_cmp_8": [
+        "f0a(paint(x, local(x)))",
+        51.9,
+        true
+      ],
+      "1d_recolor_cmp_9": [
+        "f0a(f1b(x))",
+        60.3,
+        true
+      ],
+      "1d_recolor_cnt_1": [
+        "f0a(f1a(x))",
+        78.1,
+        true
+      ],
+      "1d_recolor_cnt_15": [
+        "f0a(paint(x, local(x)))",
+        73.0,
+        true
+      ],
+      "1d_recolor_cnt_21": [
+        "f0a(recolour(x))",
+        100.0,
+        true
+      ],
+      "1d_recolor_cnt_28": [
+        "f0a(f1a(x))",
+        63.5,
+        false
+      ],
+      "1d_recolor_cnt_38": [
+        "f0a(f1b(x))",
+        103.9,
+        true
+      ],
+      "1d_recolor_cnt_4": [
+        "f0a(f1a(x))",
+        112.7,
+        true
+      ],
+      "1d_recolor_cnt_45": [
+        "f0a(x)",
+        97.6,
+        true
+      ],
+      "1d_recolor_cnt_46": [
+        "f0a(f1a(x))",
+        73.4,
+        true
+      ],
+      "1d_recolor_cnt_48": [
+        "f0a(x)",
+        99.4,
+        false
+      ],
+      "1d_recolor_cnt_9": [
+        "paint(f0a(x), segment(x))",
+        97.8,
+        true
+      ],
+      "1d_recolor_oe_12": [
+        "f0a(paint(x, local(x)))",
+        96.9,
+        false
+      ],
+      "1d_recolor_oe_14": [
+        "recolour(f0a(x))",
+        79.1,
+        false
+      ],
+      "1d_recolor_oe_17": [
+        "paint(recolour(x), segment(x))",
+        98.9,
+        true
+      ],
+      "1d_recolor_oe_19": [
+        "f1a(x)",
+        96.5,
+        false
+      ],
+      "1d_recolor_oe_25": [
+        "f0a(f1a(x))",
+        76.0,
+        true
+      ],
+      "1d_recolor_oe_27": [
+        "f1b(x)",
+        99.0,
+        true
+      ],
+      "1d_recolor_oe_32": [
+        "recolour(f1b(x))",
+        80.9,
+        true
+      ],
+      "1d_recolor_oe_35": [
+        "recolour(f1b(x))",
+        78.5,
+        true
+      ],
+      "1d_recolor_oe_43": [
+        "f0a(paint(x, local(x)))",
+        58.6,
+        false
+      ],
+      "1d_recolor_oe_46": [
+        "f0a(f1a(x))",
+        119.8,
+        true
+      ],
+      "1d_scale_dp_10": [
+        "f1a(paint(x, local(x)))",
+        63.9,
+        true
+      ],
+      "1d_scale_dp_15": [
+        "recolour(f1a(x))",
+        56.9,
+        true
+      ],
+      "1d_scale_dp_20": [
+        "recolour(paint(x, local(x)))",
+        48.2,
+        false
+      ],
+      "1d_scale_dp_24": [
+        "shift(x)",
+        67.8,
+        false
+      ],
+      "1d_scale_dp_27": [
+        "paint(x, local(shift(x)))",
+        88.3,
+        false
+      ],
+      "1d_scale_dp_3": [
+        "paint(shift(x), scan(x))",
+        88.0,
+        true
+      ],
+      "1d_scale_dp_34": [
+        "recolour(paint(x, local(x)))",
+        63.4,
+        false
+      ],
+      "1d_scale_dp_36": [
+        "shift(x)",
+        66.4,
+        false
+      ],
+      "1d_scale_dp_49": [
+        "f1a(paint(x, local(x)))",
+        63.6,
+        true
+      ],
+      "1d_scale_dp_5": [
+        "paint(x, local(shift(x)))",
+        92.6,
+        false
+      ]
+    },
+    "new_boxes": [],
+    "seconds": 142.83199429512024
+  }
+]

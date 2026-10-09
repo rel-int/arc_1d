@@ -2,9 +2,9 @@ import torch
 from torch.func import functional_call, vmap
 
 from dc.data import Task, onehot
-from dc.library import CELLS, Library
+from dc.library import CELLS, Entry, Library
 from dc.semantics import TraceFree
-from dc.terms import enumerate_terms
+from dc.terms import Term, enumerate_terms
 from dc.wake import Batch, Config, fit, fit_batch
 
 GRIDS = [(0, 3, 3, 0, 0, 5, 0), (2, 0, 0, 0, 2, 2, 0, 0, 0, 4, 4, 4), (0, 0, 7, 0, 7)]
@@ -43,3 +43,19 @@ def test_fit_batch_is_fit_on_each_task():
             a = fit(term, task, library, semantics, config, 0)
             assert abs(a.dl - b.dl) < 1e-3 and a.test_prediction == b.test_prediction, term
             assert a.weights.keys() == b.weights.keys()
+
+
+def test_fit_batch_is_fit_with_a_learned_box():
+    """A box carrying trained weights compiles to a nested model, which the vmap must reach too."""
+    library, semantics = Library.base(), TraceFree()
+    body = Term.parse("recolour(paint(x, segment(x)))")
+    torch.manual_seed(1)
+    weights = {k: p.detach() + 0.1 * torch.randn_like(p) for k, p in semantics.model(body, library).slot_parameters()}
+    library.entries["f0a"] = Entry("f0a", ("Grid",), "Grid", body=body, weights=weights)
+    library.weights["f0a"] = 3.
+    for steps in (0, 1):
+        for term in [t for t in enumerate_terms(library, 2) if "f0a" in str(t)]:
+            batched = fit_batch(term, TASKS, Batch.of(TASKS), library, semantics, Config(steps=steps))
+            for task, b in zip(TASKS, batched):
+                a = fit(term, task, library, semantics, Config(steps=steps), 0)
+                assert abs(a.dl - b.dl) < 1e-3 and a.test_prediction == b.test_prediction, (steps, term)
