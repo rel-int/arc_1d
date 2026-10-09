@@ -51,6 +51,8 @@ def parse():
     if args.quick:
         for name, value in QUICK.items():
             setattr(args, name, value)
+    if not args.batched and (args.restarts > 1 or args.select != "dl"):
+        parser.error("--restarts and --select loo need --batched")
     args.out = args.out or Path("results") / ("quick" if args.quick else "default")
     return args
 
@@ -124,7 +126,7 @@ def main():
                 if n % 10 == 0 or n == total:
                     print(f"  iteration {iteration}: {n}/{total} candidates, "
                           f"{time.time() - start:.0f}s", flush=True)
-            results |= wake_batch(todo, terms, library, TraceFree(), config, args.device, progress)
+            results |= wake_batch(todo, terms, library, TraceFree(), config, iteration, args.device, progress)
         else:
             results |= run_pool(args, tasks, results, partial, start, iteration)
         best = {name: solutions[0] for name, solutions in results.items()}
@@ -134,7 +136,8 @@ def main():
         record["new_boxes"] = [(e.signature(), str(e.body), len(e.weights)) for e in added]
         record["seconds"] = time.time() - start
         history.append(record)
-        print(f"iteration {iteration}: top-1 {record['top1']}/{len(tasks)}, "
+        print(f"iteration {iteration}: top-1 {record['top1']}/{len(tasks)} "
+              f"(least DL {record['top1_dl']}, kept {record['kept']}), "
               f"train-solved {record['train']}, mean DL {record['mean_dl']:.1f}, "
               f"library {record['library']}, {record['seconds']:.0f}s, new {record['new_boxes']}",
               flush=True)
@@ -158,18 +161,27 @@ def run_pool(args, tasks, results, partial, start, iteration):
 
 
 def summarise(iteration, tasks, results, library, n_candidates):
+    """
+    Top-1 is the selected candidate, top-1 DL the one of least description
+    length, top-3 any of the three of least DL and kept any of the kept ones,
+    which bounds what a re-ranking of them can reach.
+    """
     family = defaultdict(lambda: [0, 0])
-    top1 = top3 = train = 0
+    top1 = top1_dl = top3 = kept = train = 0
     for task in tasks:
         solutions = results[task.name]
+        by_dl = sorted(solutions, key=lambda s: s.dl)
         hit = solutions[0].test_prediction == task.test[1]
         top1 += hit
-        top3 += any(s.test_prediction == task.test[1] for s in solutions)
+        top1_dl += by_dl[0].test_prediction == task.test[1]
+        top3 += any(s.test_prediction == task.test[1] for s in by_dl[:3])
+        kept += any(s.test_prediction == task.test[1] for s in solutions)
         train += solutions[0].train_exact
         family[task.family][0] += hit
         family[task.family][1] += 1
     dls = [results[t.name][0].dl for t in tasks]
-    return dict(iteration=iteration, top1=top1, top3=top3, train=train, tasks=len(tasks),
+    return dict(iteration=iteration, top1=top1, top1_dl=top1_dl, top3=top3, kept=kept,
+                train=train, tasks=len(tasks),
                 library=len(library), candidates=n_candidates, mean_dl=sum(dls) / len(dls),
                 family=dict(sorted(family.items())),
                 solutions={t.name: [str(s.term), round(s.dl, 1), s.test_prediction == t.test[1]]

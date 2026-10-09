@@ -17,7 +17,7 @@ The test pair is never seen here: it is only predicted, by ``dc.run``.
 from __future__ import annotations
 
 import zlib
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 import torch
 from torch.func import functional_call, vmap
@@ -40,6 +40,9 @@ class Config:
     quotas: str = ""  # e.g. "3:57,4:50,5:43": the most probable 57 of size <= 3, 50 of size 4, 43 of size 5
     keep: int = 3
     seed: int = 0
+    restarts: int = 1  # starts per candidate with --batched: the prior, then perturbations of it
+    noise: float = 0.1  # scale of the Gaussian perturbation of a restart
+    select: str = "dl"  # "dl", or "loo" to re-rank the kept candidates by leave-one-out with --batched
 
 
 @dataclass
@@ -51,10 +54,15 @@ class Solution:
     train_exact: bool
     weights: dict  # parameter name -> trained value, for abstraction
     test_prediction: tuple[int, ...]
+    loo: int | None = None  # training pairs predicted when fitted on the others, if selected by it
 
     @property
     def dl(self) -> float:
         return self.structure + self.params + self.data
+
+    def rank(self, select: str) -> tuple:
+        """The sort key of a selector: least DL, or most pairs held out and predicted then least DL."""
+        return (self.dl,) if select == "dl" else (-self.loo, self.dl)
 
 
 def seed_for(*keys) -> int:
@@ -159,24 +167,41 @@ def masked_bits(output: torch.Tensor, targets: torch.Tensor, mask: torch.Tensor)
     return torch.where(mask, -torch.log2(p), 0.).sum((1, 2))
 
 
-def fit_batch(term: Term, tasks: list[Task], batch: Batch, library: Library,
-              semantics: Semantics, config: Config) -> list[Solution]:
+def starts(prior: dict, config: Config, iteration: int, term: Term) -> dict:
     """
-    :func:`fit` on every task at once: one model, its parameters stacked
-    along a leading task axis and the forward pass vmapped over tasks, with
-    one Adam over the stacked parameters, which, being elementwise, is one
-    Adam per task. A task that fits within ``stop_bits`` is frozen at the step
-    where :func:`fit` would have stopped. Every module starts at its prior
-    whatever the seed, so the tasks share their starting point.
+    ``config.restarts`` starting points per parameter, stacked: the prior,
+    then the prior plus Gaussian noise of scale ``noise``, drawn from a
+    generator seeded by ``(seed, iteration, term)`` and the same for every task,
+    so that a task's fit does not depend on what else is in its batch.
+    """
+    generator = torch.Generator().manual_seed(seed_for(config.seed, iteration, term))
+    noise = lambda p: config.noise * torch.randn(config.restarts - 1, *p.shape, generator=generator)
+    return {k: torch.cat([p[None], p + noise(p).to(p.device)]) for k, p in prior.items()}
+
+
+def fit_batch(term: Term, tasks: list[Task], batch: Batch, library: Library,
+              semantics: Semantics, config: Config, iteration: int = 0) -> list[Solution]:
+    """
+    :func:`fit` on every task at once, from each of :func:`starts`: one
+    model, its parameters stacked along a leading axis of tasks times starts
+    and the forward pass vmapped over it, with one Adam over the stack,
+    which, being elementwise, is one Adam per task and start. An instance
+    that fits within ``stop_bits`` is frozen at the step where :func:`fit`
+    would have stopped. Each task keeps the start of least DL, the first on a tie.
     """
     model = semantics.model(term, library)
     slot = {id(p): name for name, p in model.slot_parameters()}
     named = dict(model.named_parameters())
-    prior = {k: p.detach().expand(len(tasks), *p.shape).clone() for k, p in named.items()}
-    params = {k: p.clone().requires_grad_() for k, p in prior.items()}
+    restarts = config.restarts if named else 1
+    tasks_by_start = lambda x: x.repeat_interleave(restarts, 0)
+    origin = starts({k: p.detach() for k, p in named.items()}, replace(config, restarts=restarts),
+                    iteration, term)
+    prior = {k: p.detach().expand(len(tasks) * restarts, *p.shape).clone() for k, p in named.items()}
+    params = {k: p.repeat(len(tasks), *[1] * (p.dim() - 1)).requires_grad_() for k, p in origin.items()}
+    inputs, targets, mask = map(tasks_by_start, (batch.inputs, batch.targets, batch.mask))
 
-    def run(weights, grids, mask):
-        CELLS.mask = mask
+    def run(weights, grids, cells):
+        CELLS.mask = cells
         try:
             return functional_call(model, weights, (grids,))
         finally:
@@ -186,14 +211,14 @@ def fit_batch(term: Term, tasks: list[Task], batch: Batch, library: Library,
     exact = lambda output, targets, mask: ((output.argmax(-1) == targets) | ~mask).flatten(1).all(1)
     if params:
         optimiser = torch.optim.Adam(params.values(), lr=config.lr)
-        active = torch.ones(len(tasks), dtype=torch.bool)
+        active = torch.ones(len(inputs), dtype=torch.bool)
         frozen = {k: p.detach().clone() for k, p in params.items()}
         for step in range(config.steps):
             optimiser.zero_grad()
-            output = forward(params, batch.inputs, batch.mask)
-            data = masked_bits(output, batch.targets, batch.mask)
+            output = forward(params, inputs, mask)
+            data = masked_bits(output, targets, mask)
             if step % 10 == 9:
-                done = active & (data < config.stop_bits) & exact(output, batch.targets, batch.mask)
+                done = active & (data < config.stop_bits) & exact(output, targets, mask)
                 for k, p in params.items():
                     frozen[k][done] = p.detach()[done]
                 active &= ~done
@@ -212,34 +237,67 @@ def fit_batch(term: Term, tasks: list[Task], batch: Batch, library: Library,
                 small = (p - prior[k]).abs() < config.delta / 2
                 p[small] = prior[k][small]
     with torch.no_grad():
-        output = forward(params, batch.inputs, batch.mask)
-        data = masked_bits(output, batch.targets, batch.mask)
-        fits = exact(output, batch.targets, batch.mask)
-        predictions = forward(params, batch.test, batch.test_mask).argmax(-1)[:, 0]
+        output = forward(params, inputs, mask)
+        data = masked_bits(output, targets, mask)
+        fits = exact(output, targets, mask)
+        predictions = forward(params, *map(tasks_by_start, (batch.test, batch.test_mask))).argmax(-1)[:, 0]
         bits = sum((torch.log2(1 + (p - prior[k]).abs() / config.delta).flatten(1).sum(1)
-                    for k, p in params.items()), torch.zeros(len(tasks)))
+                    for k, p in params.items()), torch.zeros(len(inputs)))
     structure = structure_bits(term, library)
+    chosen = (bits + data).view(len(tasks), restarts).argmin(1) + torch.arange(len(tasks)) * restarts
     return [Solution(
         term=term, structure=structure, params=float(bits[i]), data=float(data[i]),
         train_exact=bool(fits[i]),
         weights={slot[id(p)]: params[k][i].detach().cpu().clone() for k, p in named.items()},
         test_prediction=tuple(predictions[i, :task.length].tolist()))
-        for i, task in enumerate(tasks)]
+        for i, task in zip(chosen.tolist(), tasks)]
+
+
+def folds(task: Task) -> list[Task]:
+    """The task fitted on all its training pairs but one and tested on that one, for each one."""
+    return [Task(task.family, task.name, task.train[:k] + task.train[k + 1:], task.train[k])
+            for k in range(len(task.train))]
+
+
+def leave_one_out(term: Term, tasks: list[Task], library: Library, semantics: Semantics,
+                  config: Config, iteration: int) -> list[int]:
+    """For each task, how many of its training pairs ``term`` predicts when fitted on the others."""
+    held_out = [fold for task in tasks for fold in folds(task)]
+    solutions = fit_batch(term, held_out, Batch.of(held_out), library, semantics,
+                          replace(config, restarts=1), iteration)
+    hits = [s.test_prediction == fold.test[1] for s, fold in zip(solutions, held_out)]
+    per_task = len(held_out) // len(tasks)
+    return [sum(hits[i:i + per_task]) for i in range(0, len(hits), per_task)]
 
 
 def wake_batch(tasks: list[Task], terms: list[Term], library: Library, semantics: Semantics,
-               config: Config, device: str = "cpu", progress=None) -> dict[str, list[Solution]]:
+               config: Config, iteration: int = 0, device: str = "cpu",
+               progress=None) -> dict[str, list[Solution]]:
     """
     :func:`wake` on every task, one term at a time over all of them, keeping
     the ``keep`` candidates of least description length on each as it goes;
-    the sort is stable, so ties fall as in :func:`wake`.
+    the sort is stable, so ties fall as in :func:`wake`. With ``select`` set
+    to ``loo``, the kept candidates are then fitted once more per training
+    pair, on the other pairs, and re-ranked by how many they predict.
     """
     best = {t.name: [] for t in tasks}
     with torch.device(device):
         batch = Batch.of(tasks)
         for n, term in enumerate(terms):
-            for task, solution in zip(tasks, fit_batch(term, tasks, batch, library, semantics, config)):
+            solutions = fit_batch(term, tasks, batch, library, semantics, config, iteration)
+            for task, solution in zip(tasks, solutions):
                 best[task.name] = sorted(best[task.name] + [solution], key=lambda s: s.dl)[:config.keep]
             if progress:
                 progress(n + 1, len(terms))
+        if config.select == "loo":
+            by_term = {}
+            for task in tasks:
+                for solution in best[task.name]:
+                    by_term.setdefault(solution.term, []).append((task, solution))
+            for term, kept in by_term.items():
+                hits = leave_one_out(term, [t for t, _ in kept], library, semantics, config, iteration)
+                for (_, solution), hit in zip(kept, hits):
+                    solution.loo = hit
+            for name in best:
+                best[name].sort(key=lambda s: s.rank(config.select))
     return best

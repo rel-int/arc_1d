@@ -36,9 +36,9 @@ app = modal.App("arc-1d-dreamcoder", image=image)
 
 def run(name: str, args: str) -> dict:
     out = Path("/results") / name
-    command = ["python", "-m", "dc.run", "--out", str(out), *shlex.split(args)]
+    command = ["python", "-m", "dc.run", "--out", str(out), "--resume", *shlex.split(args)]
     start = time.time()
-    with open(Path("/results") / f"{name}.log", "w") as log:
+    with open(Path("/results") / f"{name}.log", "a") as log:
         subprocess.run(command, check=True, stdout=log, stderr=subprocess.STDOUT)
     seconds = time.time() - start
     (out / "wall.txt").write_text(f"{seconds:.1f}\n")
