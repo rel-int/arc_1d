@@ -1,7 +1,7 @@
 """
 The default run on Modal, on CPU or GPU, from the same image and lock.
 
-    modal run --detach modal_run.py --name gpu-l4 --machine l4 --args "--device cuda"
+    modal run --detach modal_run.py --name batched-l4 --machine l4 --args "--batched --device cuda"
     modal run --detach modal_run.py --name cpu-4 --machine cpu4
     modal run modal_run.py::fetch --name gpu-l4     # results/<name>/ back on disk
 
