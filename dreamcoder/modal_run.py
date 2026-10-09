@@ -6,8 +6,9 @@ The default run on Modal, on CPU or GPU, from the same image and lock.
     modal run modal_run.py::fetch --name gpu-l4     # results/<name>/ back on disk
 
 Each run writes ``results/<name>/`` to the ``arc-1d-dreamcoder`` volume, and
-``fetch`` returns it as a tarball, since ``modal volume get`` is not reachable
-from every sandbox.
+``fetch`` returns it as a tarball without the checkpoints, since neither
+``modal volume get`` nor a large return value, which Modal hands over as a
+download, is reachable from every sandbox.
 """
 
 from __future__ import annotations
@@ -75,7 +76,7 @@ def fetch_remote(name: str) -> bytes:
     with tarfile.open(fileobj=buffer, mode="w:gz") as tar:
         for path in (Path("/results") / name, Path("/results") / f"{name}.log"):
             if path.exists():
-                tar.add(path, arcname=path.name)
+                tar.add(path, arcname=path.name, filter=lambda info: None if info.name.endswith(".pkl") else info)
     return buffer.getvalue()
 
 

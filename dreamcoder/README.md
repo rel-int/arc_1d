@@ -86,3 +86,41 @@ iteration 0 (`pr-cpu16` against the committed `default`, which predates early
 stopping, reproduced with `--stop-bits -1`). So top-1 counts at iterations 1
 and 2 carry a noise of about ±4 of 180, which is the size of the gaps the
 library is being judged on.
+
+## Restarts, leave-one-out, and does the library help?
+
+`--restarts R` fits each candidate from R starts, restart 0 at the prior and
+the others perturbed from it by noise seeded by `(seed, iteration, term)`;
+each task keeps the start of least DL. `--select loo` fits each of the `keep`
+candidates of least DL once more per training pair, on the other two, and
+re-ranks them by how many held-out pairs they predict, ties by DL. Both need
+`--batched`. `python -m dc.compare` puts groups of seeds side by side.
+
+All 901 tasks, size ≤ 5 by quotas `3:57,4:50,5:43`, 4 restarts, leave-one-out
+over the 10 kept, seeds 0/1/2, one L4 each; the **library** adds two boxes per
+iteration, the **control** (`--new-boxes 0`) has the same candidate budget and
+re-estimates its grammar but learns no box:
+
+| run | iteration | top-1 (leave-one-out) | top-1 (least DL) | any of the 10 kept | fit train exactly | mean DL |
+|---|---|---|---|---|---|---|
+| reference: 1 start, least DL | 0 / 2 | – | 538 / 571 | – | 629 / 665 | 76.4 / 76.9 |
+| library | 0 | 662.7 ± 3.1 | 639.3 ± 8.5 | 764.7 ± 4.7 | 794.0 ± 4.4 | 65.4 |
+| library | 1 | 667.7 ± 17.0 | 645.0 ± 19.2 | 768.3 ± 2.1 | 784.7 ± 7.6 | 65.2 |
+| library | 2 | **682.3 ± 13.3** | 664.7 ± 18.1 | 771.0 ± 6.6 | 790.0 ± 4.4 | 61.1 |
+| control | 1 | 668.3 ± 11.7 | 647.3 ± 13.3 | 768.7 ± 2.9 | 780.0 ± 6.6 | 66.1 |
+| control | 2 | **677.0 ± 10.6** | 651.7 ± 12.5 | 768.0 ± 1.0 | 789.3 ± 4.2 | 64.5 |
+
+- **Restarts are the big win**: with one start, 629 tasks fit their training
+  pairs; with four, 794. Top-1 by least DL goes from 538 to 639 at iteration 0.
+- **Leave-one-out adds 23 more** (639 → 663) at no search cost, but the kept
+  candidates contain a right answer on ~765 tasks: selection still loses ~100.
+- **The library does not beat the control on the test pairs**: 682 ± 13 against
+  677 ± 11 at iteration 2, per seed 0, +18 and −2. It does compress (mean
+  DL 61.1 against 64.5), and iteration 0, where the two runs are the same,
+  agrees within a task.
+- **Seeds matter after iteration 0**: ± 3 at iteration 0 but ± 11–19 after,
+  since the re-estimated grammar picks the next iteration's 150 candidates
+  from what the last one solved. Judging any change on one seed is not enough.
+
+Each run took 1.6–1.9 h on an L4: four starts plus the leave-one-out fits cost
+about 4× the single-start run.
