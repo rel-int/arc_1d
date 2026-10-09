@@ -75,6 +75,28 @@ def foreground_mass(x: torch.Tensor) -> torch.Tensor:
     return x[..., 1:].sum(-1)
 
 
+class Cells:
+    """
+    Which cells of a padded batch are grid: ``mask`` is ``(batch, length)``,
+    set by :func:`dc.wake.wake_batch` while it fits tasks of different
+    lengths together, ``None`` otherwise. Outside a grid is background, so
+    every box producing a ``Grid`` puts background back in the padding, which
+    is what ``shift``, ``local`` and ``scan`` read beyond the edge of an
+    unpadded grid, and ``reflect`` reverses the grid cells alone.
+    """
+    mask: torch.Tensor | None = None
+
+
+CELLS = Cells()
+
+
+def confine(grid: torch.Tensor) -> torch.Tensor:
+    """Background outside the grid cells of a padded batch."""
+    if CELLS.mask is None:
+        return grid
+    return torch.where(CELLS.mask[..., None], grid, background_like(grid, grid.shape[1]))
+
+
 class Recolour(nn.Module):
     """``Grid -> Grid``, per cell: an equivariant colour map plus an absolute one."""
     def __init__(self):
@@ -84,7 +106,7 @@ class Recolour(nn.Module):
         self.bias = nn.Parameter(torch.zeros(COLOURS))
 
     def forward(self, grid):
-        return softmax(TAU * (grid @ (equivariant(self.theta) + self.absolute) + self.bias), -1)
+        return confine(softmax(TAU * (grid @ (equivariant(self.theta) + self.absolute) + self.bias), -1))
 
 
 class Shift(nn.Module):
@@ -98,13 +120,18 @@ class Shift(nn.Module):
     def forward(self, grid):
         # output cell t reads input cell t - o with weight softmax(offsets)[o]
         taps = shift_taps(grid, self.REACH).flip(2)
-        return torch.einsum("blod,o->bld", taps, softmax(self.offsets, 0))
+        return confine(torch.einsum("blod,o->bld", taps, softmax(self.offsets, 0)))
 
 
 class Reflect(nn.Module):
     """``Grid -> Grid``, reversal of the grid, no parameters."""
     def forward(self, grid):
-        return grid.flip(1)
+        if CELLS.mask is None:
+            return grid.flip(1)
+        position = torch.arange(grid.shape[1]).expand(grid.shape[:2])
+        length = CELLS.mask.sum(1, keepdim=True)
+        source = torch.where(CELLS.mask, length - 1 - position, position)
+        return confine(grid.gather(1, source[..., None].expand(-1, -1, COLOURS)))
 
 
 class Local(nn.Module):
@@ -200,7 +227,7 @@ class Paint(nn.Module):
         scores = grid @ equivariant(self.theta) + torch.einsum(
             "blkd,kde->ble", feat, equivariant(self.channels))
         mass = torch.cat([foreground_mass(grid)[..., None], foreground_mass(feat)], -1)
-        return softmax(TAU * (scores + mass @ self.absolute + self.bias), -1)
+        return confine(softmax(TAU * (scores + mass @ self.absolute + self.bias), -1))
 
 
 PRIMITIVES = {

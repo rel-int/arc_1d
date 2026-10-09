@@ -25,7 +25,7 @@ from dc.abstract import abstract
 from dc.library import Library
 from dc.semantics import TraceFree
 from dc.terms import to_diagram
-from dc.wake import Config, candidates, wake
+from dc.wake import Config, candidates, wake, wake_batch
 
 QUICK = dict(per_family=2, iterations=2, max_candidates=30, steps=60)
 
@@ -39,6 +39,8 @@ def parse():
     parser.add_argument("--workers", type=int, default=4)
     parser.add_argument("--device", default="cpu",
                         help="where every worker fits its candidates, e.g. cuda; workers then spawn rather than fork")
+    parser.add_argument("--batched", action="store_true",
+                        help="fit each candidate on every task at once, vmapped, in this process on --device")
     parser.add_argument("--data", type=Path, default=Path("data"))
     parser.add_argument("--out", type=Path, default=None)
     parser.add_argument("--resume", action="store_true",
@@ -115,14 +117,16 @@ def main():
         results = {name: as_tensors(solutions) for name, solutions in results.items()}
         start = time.time() - spent
         SHARED.update(terms=terms, library=library, config=config, iteration=iteration)
-        with pool(args) as workers:
+        if args.batched:
             todo = [t for t in tasks if t.name not in results]
-            for name, solutions in workers.imap_unordered(run_task, todo):
-                results[name] = as_tensors(solutions)
-                if len(results) % 20 == 0 or len(results) == len(tasks):
-                    partial.write_bytes(pickle.dumps((results, time.time() - start)))
-                    print(f"  iteration {iteration}: {len(results)}/{len(tasks)} tasks, "
+
+            def progress(n, total):
+                if n % 10 == 0 or n == total:
+                    print(f"  iteration {iteration}: {n}/{total} candidates, "
                           f"{time.time() - start:.0f}s", flush=True)
+            results |= wake_batch(todo, terms, library, TraceFree(), config, args.device, progress)
+        else:
+            results |= run_pool(args, tasks, results, partial, start, iteration)
         best = {name: solutions[0] for name, solutions in results.items()}
         record = summarise(iteration, tasks, results, library, len(terms))
         added = abstract(library, best, args.new_boxes, iteration) \
@@ -137,6 +141,20 @@ def main():
         (args.out / "history.json").write_text(json.dumps(history, indent=2))
         checkpoint.write_bytes(pickle.dumps((library, history, best, results)))
     write_report(args, config, tasks, by_name, history, best, results, library)
+
+
+def run_pool(args, tasks, results, partial, start, iteration):
+    """Wake on one task per worker, checkpointing every 20 tasks."""
+    results = dict(results)
+    with pool(args) as workers:
+        todo = [t for t in tasks if t.name not in results]
+        for name, solutions in workers.imap_unordered(run_task, todo):
+            results[name] = as_tensors(solutions)
+            if len(results) % 20 == 0 or len(results) == len(tasks):
+                partial.write_bytes(pickle.dumps((results, time.time() - start)))
+                print(f"  iteration {iteration}: {len(results)}/{len(tasks)} tasks, "
+                      f"{time.time() - start:.0f}s", flush=True)
+    return results
 
 
 def summarise(iteration, tasks, results, library, n_candidates):
