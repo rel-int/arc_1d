@@ -124,3 +124,43 @@ re-estimates its grammar but learns no box:
 
 Each run took 1.6–1.9 h on an L4: four starts plus the leave-one-out fits cost
 about 4× the single-start run.
+
+## Selection by vote, and boxes for the families at zero
+
+`dc/select.py` re-ranks the kept candidates of a task: `dl`, `loo`, or a vote
+over their test predictions, each candidate weighing `2^-DL` (`bma`, model
+averaging under the MDL prior), `loo + 1` (`vote_loo`) or both (`vote`).
+Evaluated offline on the six runs above (`modal run modal_run.py::selection`),
+chosen on the even-numbered tasks and read on the odd ones, `vote_loo` wins in
+every run, by -1 to +16 of 450 over `loo`. The votes weighted by `2^-DL` stay
+at least DL: description lengths differ by bits, so one candidate swamps
+the rest. Agreement between candidates is what carries the signal.
+
+`reverse` reverses each object in place, `pivot` reflects the grid about the
+anchor (the first of the smallest one-colour objects), and `slide` moves
+each side of the anchor until it touches it. All three are parameter-free
+gathers, like `reflect`, which is now written with them. **They are
+hand-written for flip, mirror and move_dp**, the families at zero, and each
+alone answers every pair of its family. Their scores on those families come
+from that knowledge, the way DreamCoder's base language does, and not from
+learning. The search budget stays at 150 candidates, so the 255 terms of
+size ≤ 3 now compete for 57 places where there were 57 of them.
+
+Same runs as above, with the three boxes and `--select vote_loo`:
+
+| run | iteration | top-1 (vote) | top-1 (least DL) | any of the 10 kept | fit train exactly | mean DL |
+|---|---|---|---|---|---|---|
+| library | 0 | 835.3 ± 1.5 | 794.3 ± 4.0 | 881.0 ± 4.4 | 885.7 ± 8.0 | 47.0 |
+| library | 2 | 826.3 ± 20.1 | 820.3 ± 17.6 | 882.7 ± 3.2 | 870.3 ± 17.7 | 45.1 |
+| control | 2 | **842.3 ± 3.8** | 806.0 ± 8.5 | 882.7 ± 5.1 | 885.7 ± 3.8 | 44.7 |
+
+- mirror, flip and move_dp go from 2–6 of 50 to 49–50, and `slide` lifts
+  move_2p_dp (42 → 50) and scale_dp (44 → 49) on the way.
+- **The fixed budget costs pcopy_1c**: 22 → 19 of 50 in the control and 13
+  in the library, the one family the displaced candidates were answering.
+- **The library now hurts**: 826 ± 20 against 842 ± 4. On seed 1, its new
+  boxes re-weight the grammar until `pivot` falls out of the 150, and mirror
+  drops from 50 to 12. A library that re-estimates the prior from what it
+  solved can crowd out the words for what it did not.
+- What remains: ~40 tasks a kept candidate answers but the vote misses, and
+  ~20 that none of the kept answers, half of them pcopy.
