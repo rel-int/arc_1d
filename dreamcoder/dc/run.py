@@ -23,6 +23,7 @@ import torch
 from dc import data
 from dc.abstract import abstract
 from dc.library import Library
+from dc.select import SELECTORS
 from dc.semantics import TraceFree
 from dc.terms import to_diagram
 from dc.wake import Config, candidates, wake, wake_batch
@@ -52,7 +53,9 @@ def parse():
         for name, value in QUICK.items():
             setattr(args, name, value)
     if not args.batched and (args.restarts > 1 or args.select != "dl"):
-        parser.error("--restarts and --select loo need --batched")
+        parser.error("--restarts and --select need --batched")
+    if args.select not in SELECTORS:
+        parser.error(f"--select is one of {', '.join(SELECTORS)}")
     args.out = args.out or Path("results") / ("quick" if args.quick else "default")
     return args
 

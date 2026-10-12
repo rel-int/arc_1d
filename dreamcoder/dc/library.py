@@ -123,15 +123,95 @@ class Shift(nn.Module):
         return confine(torch.einsum("blod,o->bld", taps, softmax(self.offsets, 0)))
 
 
+def lengths(grid: torch.Tensor) -> torch.Tensor:
+    """``(batch, 1)``: how many cells of each row are grid, all of them unless padded."""
+    if CELLS.mask is None:
+        return torch.full((grid.shape[0], 1), grid.shape[1])
+    return CELLS.mask.sum(1, keepdim=True)
+
+
+def positions(grid: torch.Tensor) -> torch.Tensor:
+    return torch.arange(grid.shape[1]).expand(grid.shape[:2])
+
+
+def move(grid: torch.Tensor, source: torch.Tensor) -> torch.Tensor:
+    """Cell ``i`` reads cell ``source[i]``, and background where that is outside the grid."""
+    inside = (source >= 0) & (source < lengths(grid))
+    moved = grid.gather(1, source.clamp(0, grid.shape[1] - 1)[..., None].expand(-1, -1, COLOURS))
+    return confine(torch.where(inside[..., None], moved, background_like(grid, grid.shape[1])))
+
+
+def bounds(starts: torch.Tensor, ends: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+    """
+    For each cell, the first and the last cell of the segment it is in,
+    given where segments start and where they end, as ``(batch, length)`` masks.
+    """
+    position, last = positions(starts), starts.shape[1] - 1
+    first = torch.where(starts, position, -1).cummax(1).values
+    final = last - torch.where(ends.flip(1), position, -1).cummax(1).values
+    return first, final.flip(1)
+
+
+def objects(grid: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    """The foreground, and the bounds of the maximal run of foreground each cell is in, whatever its colours."""
+    fg = grid.argmax(-1) > 0
+    none = torch.zeros(fg.shape[0], 1, dtype=torch.bool)
+    before, after = torch.cat([none, fg[:, :-1]], 1), torch.cat([fg[:, 1:], none], 1)
+    return (fg, *bounds(fg & ~before, fg & ~after))
+
+
+def anchor(grid: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    """
+    The first and last cell of the anchor, the first of the smallest objects
+    of one colour, ``(batch, 1)`` each, and whether there is one at all.
+    """
+    colour = grid.argmax(-1)
+    fg = colour > 0
+    edge = torch.full((fg.shape[0], 1), -1)
+    before, after = torch.cat([edge, colour[:, :-1]], 1), torch.cat([colour[:, 1:], edge], 1)
+    first, final = bounds(fg & (colour != before), fg & (colour != after))
+    size = torch.where(fg, final - first + 1, grid.shape[1] + 1)
+    at = (size == size.min(1, keepdim=True).values).int().argmax(1, keepdim=True)
+    return first.gather(1, at), final.gather(1, at), fg.any(1, keepdim=True)
+
+
 class Reflect(nn.Module):
     """``Grid -> Grid``, reversal of the grid, no parameters."""
     def forward(self, grid):
-        if CELLS.mask is None:
-            return grid.flip(1)
-        position = torch.arange(grid.shape[1]).expand(grid.shape[:2])
-        length = CELLS.mask.sum(1, keepdim=True)
-        source = torch.where(CELLS.mask, length - 1 - position, position)
-        return confine(grid.gather(1, source[..., None].expand(-1, -1, COLOURS)))
+        return move(grid, lengths(grid) - 1 - positions(grid))
+
+
+class Reverse(nn.Module):
+    """``Grid -> Grid``, each object reversed in place, an object being a maximal run of foreground of any colours."""
+    def forward(self, grid):
+        fg, first, final = objects(grid)
+        position = positions(grid)
+        return move(grid, torch.where(fg, first + final - position, position))
+
+
+class Pivot(nn.Module):
+    """``Grid -> Grid``, the reflection about the anchor, the first of the smallest objects of one colour."""
+    def forward(self, grid):
+        start, end, found = anchor(grid)
+        position = positions(grid)
+        return move(grid, torch.where(found, start + end - position, position))
+
+
+class Slide(nn.Module):
+    """
+    ``Grid -> Grid``, what lies on either side of the anchor moved towards it
+    until its nearest foreground cell touches it, as one piece.
+    """
+    def forward(self, grid):
+        start, end, found = anchor(grid)
+        fg, position, width = grid.argmax(-1) > 0, positions(grid), grid.shape[1]
+        left = torch.where(fg & (position < start), position, -1).max(1, keepdim=True).values
+        right = torch.where(fg & (position > end), position, width).min(1, keepdim=True).values
+        gap_left = torch.where(found & (left >= 0), start - 1 - left, 0)
+        gap_right = torch.where(found & (right < width), right - end - 1, 0)
+        source = torch.where(position < start, position - gap_left,
+                             torch.where(position > end, position + gap_right, position))
+        return move(grid, source)
 
 
 class Local(nn.Module):
@@ -234,12 +314,15 @@ PRIMITIVES = {
     "recolour": (Recolour, ("Grid",), "Grid"),
     "shift": (Shift, ("Grid",), "Grid"),
     "reflect": (Reflect, ("Grid",), "Grid"),
+    "reverse": (Reverse, ("Grid",), "Grid"),
+    "pivot": (Pivot, ("Grid",), "Grid"),
+    "slide": (Slide, ("Grid",), "Grid"),
     "local": (Local, ("Grid",), "Feat"),
     "scan": (Scan, ("Grid",), "Feat"),
     "segment": (Segment, ("Grid",), "Feat"),
     "paint": (Paint, ("Grid", "Feat"), "Grid"),
 }
-IDEMPOTENT = {"recolour", "reflect"}  # f(f(x)) is f(x) or x: never enumerated
+IDEMPOTENT = {"recolour", "reflect", "reverse", "pivot", "slide"}  # f(f(x)) is f(x) or x: never enumerated
 
 
 @dataclass

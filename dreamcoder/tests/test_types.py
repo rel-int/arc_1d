@@ -28,7 +28,7 @@ def test_types_are_distinct():
 
 def test_enumeration_is_well_typed(library):
     terms = enumerate_terms(library, 3)
-    assert len(terms) == len(set(terms)) == 57
+    assert len(terms) == len(set(terms)) == 255
     for term in terms:
         assert well_typed(term, library) and 1 <= term.size <= 3
         diagram = to_diagram(term, library)

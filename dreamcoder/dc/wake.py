@@ -42,7 +42,7 @@ class Config:
     seed: int = 0
     restarts: int = 1  # starts per candidate with --batched: the prior, then perturbations of it
     noise: float = 0.1  # scale of the Gaussian perturbation of a restart
-    select: str = "dl"  # "dl", or "loo" to re-rank the kept candidates by leave-one-out with --batched
+    select: str = "dl"  # how the kept candidates are re-ranked, one of dc.select.SELECTORS, with --batched
 
 
 @dataclass
@@ -59,10 +59,6 @@ class Solution:
     @property
     def dl(self) -> float:
         return self.structure + self.params + self.data
-
-    def rank(self, select: str) -> tuple:
-        """The sort key of a selector: least DL, or most pairs held out and predicted then least DL."""
-        return (self.dl,) if select == "dl" else (-self.loo, self.dl)
 
 
 def seed_for(*keys) -> int:
@@ -277,10 +273,12 @@ def wake_batch(tasks: list[Task], terms: list[Term], library: Library, semantics
     """
     :func:`wake` on every task, one term at a time over all of them, keeping
     the ``keep`` candidates of least description length on each as it goes;
-    the sort is stable, so ties fall as in :func:`wake`. With ``select`` set
-    to ``loo``, the kept candidates are then fitted once more per training
-    pair, on the other pairs, and re-ranked by how many they predict.
+    the sort is stable, so ties fall as in :func:`wake`. When the selector
+    reads leave-one-out, the kept candidates are then fitted once more per
+    training pair, on the other pairs, to count how many they predict; then
+    :func:`dc.select.select` re-ranks them.
     """
+    from dc.select import NEEDS_LOO, select
     best = {t.name: [] for t in tasks}
     with torch.device(device):
         batch = Batch.of(tasks)
@@ -290,7 +288,7 @@ def wake_batch(tasks: list[Task], terms: list[Term], library: Library, semantics
                 best[task.name] = sorted(best[task.name] + [solution], key=lambda s: s.dl)[:config.keep]
             if progress:
                 progress(n + 1, len(terms))
-        if config.select == "loo":
+        if config.select in NEEDS_LOO:
             by_term = {}
             for task in tasks:
                 for solution in best[task.name]:
@@ -299,6 +297,5 @@ def wake_batch(tasks: list[Task], terms: list[Term], library: Library, semantics
                 hits = leave_one_out(term, [t for t, _ in kept], library, semantics, config, iteration)
                 for (_, solution), hit in zip(kept, hits):
                     solution.loo = hit
-            for name in best:
-                best[name].sort(key=lambda s: s.rank(config.select))
+        best = {name: select(solutions, config.select) for name, solutions in best.items()}
     return best

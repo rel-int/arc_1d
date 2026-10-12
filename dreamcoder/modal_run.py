@@ -80,6 +80,48 @@ def fetch_remote(name: str) -> bytes:
     return buffer.getvalue()
 
 
+@app.function(volumes={"/results": VOLUME}, timeout=3600)
+def selection_remote(names: list[str]) -> dict:
+    """
+    Every selector on the kept candidates of each run's last iteration, read
+    from its checkpoint: test pairs hit, over all tasks, the even-numbered
+    ones and the odd-numbered ones, so a selector chosen on one half can be
+    reported on the other.
+    """
+    import pickle
+    from dc import data
+    from dc.select import SELECTORS, select
+    tasks = {t.name: t for t in data.load(Path("data"))}
+    half = lambda name: "even" if int(name.rsplit("_", 1)[1]) % 2 == 0 else "odd"
+    found = {}
+    for name in names:
+        _, _, _, results = pickle.loads((Path("/results") / name / "checkpoint.pkl").read_bytes())
+        hits = {rule: {"all": 0, "even": 0, "odd": 0} for rule in (*SELECTORS, "kept")}
+        for task_name, solutions in results.items():
+            answer = tasks[task_name].test[1]
+            for rule in SELECTORS:
+                hit = select(solutions, rule)[0].test_prediction == answer
+                hits[rule]["all"] += hit
+                hits[rule][half(task_name)] += hit
+            hit = any(s.test_prediction == answer for s in solutions)
+            hits["kept"]["all"] += hit
+            hits["kept"][half(task_name)] += hit
+        found[name] = hits
+    return found
+
+
+@app.local_entrypoint()
+def selection(names: str):
+    """``--names lib-s0,ctl-s0``: a table of every selector on each run."""
+    found = selection_remote.remote(names.split(","))
+    rules = list(next(iter(found.values())))
+    print("| run | " + " | ".join(rules) + " |")
+    print("|---|" + "---|" * len(rules))
+    for name, hits in found.items():
+        cells = [f"{h['all']} ({h['even']} + {h['odd']})" for h in hits.values()]
+        print(f"| {name} | " + " | ".join(cells) + " |")
+
+
 @app.local_entrypoint()
 def main(name: str, machine: str = "cpu4", args: str = ""):
     function = {"cpu4": cpu4, "cpu16": cpu16, "l4": l4, "a100": a100}[machine]
