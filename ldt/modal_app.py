@@ -322,35 +322,49 @@ def fetch(path: str, out: str = ""):
         print(data.decode())
 
 
-@app.function(cpu=1.0, memory=2048, timeout=8 * 3600)
-def enumerate_chunk(budget: int, start: int, stop: int):
-    from ldt.dsl1d import SPACE
-    from ldt.data import load_1darc
+@app.function(cpu=1.0, memory=4096, timeout=8 * 3600)
+def enumerate_chunk(budget: int, start: int, stop: int, bench: str = "1darc",
+                    dsl: str = "1d", unseal: str = ""):
     from ldt.enumerate import search
     from ldt.solve import correct
+    SPACE, _ = signature(dsl)
     out = []
-    for task in load_1darc("/data/1D-ARC")[start:stop]:
+    for task in benchmark(bench, unseal)[start:stop]:
         t0 = time.time()
         r = search(SPACE, task, budget)
-        top1, pass2, _ = correct(task, r.attempts)
+        top1, pass2, credit = correct(task, r.attempts)
         out.append({"name": task.name, "family": task.family,
                     "first": r.first_call, "found": len(r.programs),
                     "tried": r.calls, "sec": round(time.time() - t0, 2),
-                    "top1": top1, "pass2": pass2,
+                    "top1": top1, "pass2": pass2, "credit": credit,
                     "program": str(next(iter(r.programs), ""))})
     return out
 
 
-@app.local_entrypoint()
-def enumerate_arc(budget: int = 100000, chunk: int = 10, out: str = ""):
-    """The enumeration control on all 901 tasks of 1D-ARC."""
-    args = [(budget, s, s + chunk) for s in range(0, 901, chunk)]
+@app.function(cpu=0.25, timeout=12 * 3600, volumes={VOL: volume})
+def enumerate_all(budget: int, bench: str = "1darc", dsl: str = "1d",
+                  unseal: str = "", chunk: int = 10, name: str = ""):
+    """The enumeration control on a benchmark, its rows saved on the volume
+    as ``enum/<name>.json``."""
+    n = len(benchmark(bench, unseal))
+    args = [(budget, s, s + chunk, bench, dsl, unseal)
+            for s in range(0, n, chunk)]
     rows = [r for rs in enumerate_chunk.starmap(args) for r in rs]
-    summary = {"budget": budget, "tasks": len(rows),
-               "top1": sum(r["top1"] for r in rows),
+    summary = {"bench": bench, "dsl": dsl, "budget": budget,
+               "tasks": len(rows), "top1": sum(r["top1"] for r in rows),
                "pass2": sum(r["pass2"] for r in rows),
+               "pass2_outputs": round(sum(r["credit"] for r in rows), 2),
                "found": sum(r["found"] > 0 for r in rows)}
-    print(json.dumps(summary))
-    if out:
-        with open(out, "w") as f:
-            json.dump({"summary": summary, "rows": rows}, f)
+    os.makedirs(f"{VOL}/enum", exist_ok=True)
+    with open(f"{VOL}/enum/{name or bench + '-' + str(budget)}.json",
+              "w") as f:
+        json.dump({"summary": summary, "rows": rows}, f)
+    volume.commit()
+    return summary
+
+
+@app.local_entrypoint()
+def enumerate_arc(budget: int = 100000, bench: str = "1darc",
+                  dsl: str = "1d", unseal: str = ""):
+    """The enumeration control on a benchmark."""
+    print(json.dumps(enumerate_all.remote(budget, bench, dsl, unseal)))

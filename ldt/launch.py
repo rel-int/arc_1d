@@ -52,8 +52,17 @@ def main():
     generate.add_argument("--dsl", default="1d")
     generate.add_argument("--max-size", type=int, default=20)
     generate.add_argument("--exact", type=int, default=0)
+    enum = sub.add_parser("enumerate")
+    enum.add_argument("--budget", type=int, default=20000)
+    enum.add_argument("--bench", default="1darc")
+    enum.add_argument("--dsl", default="1d")
+    enum.add_argument("--unseal", default="")
+    enum.add_argument("--name", default="")
     a = parser.parse_args()
-    if a.job == "generate":
+    if a.job == "enumerate":
+        call = modal.Function.from_name(a.app, "enumerate_all").spawn(
+            a.budget, a.bench, a.dsl, a.unseal, 10, a.name)
+    elif a.job == "generate":
         call = modal.Function.from_name(a.app, "generate_all").spawn(
             a.name, a.shards, a.per_shard, 0, a.dsl, a.max_size, a.exact)
     elif a.job == "train":
