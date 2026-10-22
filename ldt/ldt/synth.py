@@ -167,11 +167,14 @@ class Generator:
         demos : The range of the number of training demonstrations.
         bank_size : The largest replacement tree in a one-edit variant.
         max_solutions : The cap K on the solution set.
+        inputs : ``(style, grid)``: draws a style shared by a task's inputs,
+            and an input in that style; one-dimensional grids by default.
     """
 
     def __init__(self, space: Space, sizes=(2, 20), demos=(3, 4),
-                 bank_size=3, max_solutions=32):
+                 bank_size=3, max_solutions=32, inputs=None):
         self.space, self.sizes, self.demos = space, sizes, demos
+        self.inputs = inputs or (random_style, random_grid)
         self.sampler = Sampler(space)
         self.bank_size, self.max_solutions = bank_size, max_solutions
         self.sizes_available = [
@@ -200,11 +203,12 @@ class Generator:
         for _ in range(tries):
             program = self.sampler.sample(rng, size)
             f = self.space.compile(program)
-            style = random_style(rng)
+            make_style, make_grid = self.inputs
+            style = make_style(rng)
             n_train = rng.randint(*self.demos)
             pairs = []
             for _ in range(4 * (n_train + 1)):
-                x = random_grid(rng, style)
+                x = make_grid(rng, style)
                 y = run(f, x)
                 if y is not None and any(x):
                     pairs.append((x, y))

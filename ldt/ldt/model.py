@@ -35,6 +35,10 @@ class Config:
     max_pairs: int = 6
     dropout: float = 0.1
     checkpoint: bool = True
+    grid: str = "1d"
+    slots: int = 9
+    size: int = 30
+    patch: int = 3
 
 
 class Attention(nn.Module):
@@ -74,18 +78,40 @@ class Block(nn.Module):
         return h + self.ff(self.norm3(h))
 
 
+class SelfBlock(nn.Module):
+    def __init__(self, c: Config):
+        super().__init__()
+        self.norm1, self.norm2 = nn.LayerNorm(c.dim), nn.LayerNorm(c.dim)
+        self.attn = Attention(c)
+        self.ff = nn.Sequential(nn.Linear(c.dim, 4 * c.dim), nn.GELU(),
+                                nn.Dropout(c.dropout), nn.Linear(4 * c.dim, c.dim))
+
+    def forward(self, h):
+        a = self.norm1(h)
+        h = h + self.attn(a, a)
+        return h + self.ff(self.norm2(h))
+
+
 class LDT(nn.Module):
     def __init__(self, n_positions: int, n_labels: int, config: Config):
         super().__init__()
         c = self.config = config
-        self.colour_in = nn.Embedding(12, c.dim)
-        self.colour_out = nn.Embedding(12, c.dim)
-        self.cell = nn.Embedding(c.max_length, c.dim)
-        self.pair = nn.Embedding(c.max_pairs, c.dim)
-        self.demo = nn.TransformerEncoder(
-            nn.TransformerEncoderLayer(c.dim, c.heads, 4 * c.dim, c.dropout,
-                                       batch_first=True, norm_first=True),
-            c.demo_layers, enable_nested_tensor=False)
+        if c.grid == "1d":
+            self.colour_in = nn.Embedding(12, c.dim)
+            self.colour_out = nn.Embedding(12, c.dim)
+            self.cell = nn.Embedding(c.max_length, c.dim)
+            self.pair = nn.Embedding(c.max_pairs, c.dim)
+            self.demo = nn.TransformerEncoder(
+                nn.TransformerEncoderLayer(c.dim, c.heads, 4 * c.dim, c.dropout,
+                                           batch_first=True, norm_first=True),
+                c.demo_layers, enable_nested_tensor=False)
+        else:
+            self.colour = nn.Embedding(12, c.dim)
+            self.row = nn.Parameter(torch.randn(c.size, 1, c.dim) * 0.02)
+            self.col = nn.Parameter(torch.randn(1, c.size, c.dim) * 0.02)
+            self.slot = nn.Embedding(c.slots, c.dim)
+            self.patchify = nn.Conv2d(c.dim, c.dim, c.patch, stride=c.patch)
+            self.demo = nn.ModuleList(SelfBlock(c) for _ in range(c.demo_layers))
         self.lattice = nn.Linear(n_labels, c.dim)
         self.address = nn.Parameter(torch.randn(n_positions + 1, c.dim) * 0.02)
         self.blocks = nn.ModuleList(Block(c) for _ in range(c.layers))
@@ -93,18 +119,31 @@ class LDT(nn.Module):
         self.candidate = nn.Linear(c.dim, n_labels)
         self.conflict = nn.Linear(c.dim, 1)
 
-    def encode_demos(self, inputs, outputs):
-        """``inputs``, ``outputs``: (batch, pairs, length) colour codes, PAD
-        beyond a grid's length, MASK for the unknown test output."""
-        B, M, L = inputs.shape
-        h = (self.colour_in(inputs) + self.colour_out(outputs)
-             + self.cell.weight[:L] + self.pair.weight[:M, None])
-        pad = inputs == PAD
-        h = self.demo(h.reshape(B, M * L, -1),
-                      src_key_padding_mask=pad.reshape(B, M * L))
-        return h, pad.reshape(B, M * L)
+    def encode_demos(self, demos):
+        """One dimension: ``demos`` is (batch, pairs, 2, length), each pair's
+        input and output colour codes cell by cell, ``PAD`` beyond a grid's
+        length, ``MASK`` for the unknown test output. Two dimensions: it is
+        (batch, slots, size, size), the grids input, output, ..., test input,
+        ``PAD`` outside each grid, cut into ``patch`` x ``patch`` tokens."""
+        if self.config.grid == "1d":
+            inputs, outputs = demos[:, :, 0], demos[:, :, 1]
+            B, M, L = inputs.shape
+            h = (self.colour_in(inputs) + self.colour_out(outputs)
+                 + self.cell.weight[:L] + self.pair.weight[:M, None])
+            pad = inputs == PAD
+            h = self.demo(h.reshape(B, M * L, -1),
+                          src_key_padding_mask=pad.reshape(B, M * L))
+            return h, pad.reshape(B, M * L)
+        B, S, H, W = demos.shape
+        h = self.colour(demos) + self.row + self.col  # (B, S, H, W, D)
+        h = self.patchify(h.reshape(B * S, H, W, -1).permute(0, 3, 1, 2))
+        h = h.flatten(2).transpose(1, 2).reshape(B, S, -1, self.config.dim)
+        h = (h + self.slot.weight[:S, None]).reshape(B, -1, self.config.dim)
+        for block in self.demo:
+            h = block(h)
+        return h, None
 
-    def forward(self, x, memory, memory_pad, loops: int | None = None):
+    def forward(self, x, memory, memory_pad=None, loops: int | None = None):
         """Candidate logits (loops, batch, positions, labels) and conflict
         logits (loops, batch) of a batch of states ``x``."""
         B = x.shape[0]

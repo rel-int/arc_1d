@@ -48,6 +48,7 @@ class TrainConfig:
     max_solutions: int = 16
     length: int = 96
     pairs: int = 5
+    slots: int = 9
     seed: int = 0
     log_every: int = 100
 
@@ -98,9 +99,7 @@ class Pool:
         self.rng = random.Random(c.seed)
         B = c.batch
         self.task = [None] * B
-        self.inputs = torch.zeros(B, c.pairs, c.length, dtype=torch.long,
-                                  device=device)
-        self.outputs = torch.zeros_like(self.inputs)
+        self.demos = None
         self.Y = torch.zeros(B, c.max_solutions, space.n_positions,
                              dtype=torch.long, device=device)
         self.valid = torch.zeros(B, c.max_solutions, dtype=torch.bool,
@@ -117,12 +116,14 @@ class Pool:
             return
         tasks = [self.rng.choice(self.tasks) for _ in index]
         perms = [colour_permutation(self.rng) for _ in index]
-        inputs, outputs, Y, valid = encode(
+        demos, Y, valid = encode(
             tasks, self.space, self.c.max_solutions, self.c.length,
-            self.c.pairs, perms)
+            self.c.pairs, perms, self.c.slots)
+        if self.demos is None:
+            self.demos = demos.new_zeros(
+                (self.c.batch, ) + demos.shape[1:]).to(self.device)
         idx = torch.tensor(index, device=self.device)
-        self.inputs[idx] = inputs.to(self.device)
-        self.outputs[idx] = outputs.to(self.device)
+        self.demos[idx] = demos.to(self.device)
         self.Y[idx] = Y.to(self.device)
         self.valid[idx] = valid.to(self.device)
         self.x[idx] = self.typing.top.to(self.device)
@@ -174,7 +175,7 @@ def train(space: Space, tasks: list[Task], config: Config, c: TrainConfig,
         target = torch.where(conflicted[:, None, None], x & pool.prev, target)
         pool.prev = torch.where(conflicted[:, None, None], pool.prev, target)
         with amp:
-            memory, pad = model.encode_demos(pool.inputs, pool.outputs)
+            memory, pad = model.encode_demos(pool.demos)
             cand, conf = model(x, memory, pad)
             loss, parts = losses(cand, conf, x, target, conflicted, c)
         opt.zero_grad(set_to_none=True)

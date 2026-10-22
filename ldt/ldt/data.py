@@ -69,26 +69,42 @@ def label_permutation(space: Space, perm: list[int]) -> np.ndarray:
     return table
 
 
+def is_2d(task: Task) -> bool:
+    return isinstance(task.train[0][0][0], tuple)
+
+
 def encode(tasks: list[Task], space: Space, max_solutions: int, length: int,
-           pairs: int, perms: list[list[int]] | None = None):
-    """A batch of tasks as tensors (on the CPU)."""
+           pairs: int, perms: list[list[int]] | None = None, slots: int = 9,
+           size: int = 30):
+    """A batch of tasks as tensors (on the CPU): ``demos`` as
+    :meth:`ldt.model.LDT.encode_demos` reads them, ``Y`` and ``valid``."""
     B = len(tasks)
-    inputs = np.full((B, pairs, length), PAD, dtype=np.int64)
-    outputs = np.full((B, pairs, length), PAD, dtype=np.int64)
+    two = is_2d(tasks[0])
+    if two:
+        demos = np.full((B, slots, size, size), PAD, dtype=np.int64)
+    else:
+        demos = np.full((B, pairs, 2, length), PAD, dtype=np.int64)
     Y = np.zeros((B, max_solutions, space.n_positions), dtype=np.int64)
     valid = np.zeros((B, max_solutions), dtype=bool)
     for b, task in enumerate(tasks):
         perm = np.arange(10) if perms is None else np.asarray(perms[b])
-        demos = task.train[:pairs - 1]
-        for i, (x, y) in enumerate(demos):
-            inputs[b, i, :len(x)] = perm[list(x)]
-            outputs[b, i, :len(y)] = perm[list(y)]
-        x = task.test[0][0]
-        inputs[b, len(demos), :len(x)] = perm[list(x)]
-        outputs[b, len(demos), :len(x)] = MASK
+        if two:
+            grids = [g for pair in task.train[:(slots - 1) // 2] for g in pair]
+            for k, g in zip([*range(len(grids)), slots - 1],
+                            grids + [task.test[0][0]]):
+                g = np.asarray(g)
+                demos[b, k, :g.shape[0], :g.shape[1]] = perm[g]
+        else:
+            demo_pairs = task.train[:pairs - 1]
+            for i, (x, y) in enumerate(demo_pairs):
+                demos[b, i, 0, :len(x)] = perm[list(x)]
+                demos[b, i, 1, :len(y)] = perm[list(y)]
+            x = task.test[0][0]
+            demos[b, len(demo_pairs), 0, :len(x)] = perm[list(x)]
+            demos[b, len(demo_pairs), 1, :len(x)] = MASK
         table = label_permutation(space, list(perm))
         for k, labels in enumerate(task.solutions[:max_solutions]):
             Y[b, k] = table[labels]
             valid[b, k] = True
-    return (torch.from_numpy(inputs), torch.from_numpy(outputs),
-            torch.from_numpy(Y), torch.from_numpy(valid))
+    return (torch.from_numpy(demos), torch.from_numpy(Y),
+            torch.from_numpy(valid))

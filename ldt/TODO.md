@@ -10,8 +10,10 @@ USER's answers in the session (2026-10-22): programs first then the hybrid with 
 - [x] synthetic tasks: uniform-by-size programs, Occam shrinking, one-edit alpha sets (`ldt/synth.py`)
 - [x] discopy-next `closed` as reference semantics (`ldt/discopy_bridge.py`), 400/400 round trips
 - [x] model, on-policy trainer, verified solver, enumeration control
-- [ ] 100k synthetic tasks on Modal, a pilot run, then the full run
+- [x] 98k synthetic tasks on Modal; pilot (3k steps, 15 min H100): 388/901 pass@2 vs enumeration 451/460/502 at 10^4/10^5/10^6
+- [ ] full run (20k steps); kill-free chains; untrained control
 - [ ] 1D-ARC: LDT vs enumeration vs untrained search, per family, search cost
-- [ ] hybrid: abstract evaluation of partial programs links the program and output lattices
+- [x] abstract evaluation of partial trees (`ldt/abstract.py`), sound on every cut of 150 random programs
+- [ ] hybrid: prune with it at inference, measured; output-lattice state on the test input
 - [ ] 2D DSL, synthetic data, ARC-AGI-1 and ARC-AGI-2 public evaluation (pass@2)
 - [ ] README with results; delete this file

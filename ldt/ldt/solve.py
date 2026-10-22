@@ -39,6 +39,7 @@ class Result:
     first_call: int | None = None  # model calls until the first program
     calls: int = 0
     attempts: list = field(default_factory=list)
+    pruned: int = 0  # chains restarted by abstract evaluation
 
 
 def rank(result: Result, space_sizes: dict) -> list:
@@ -52,10 +53,16 @@ def solve(space: Space, typing: Typing, model, tasks: list[Task],
           chains: int = 32, rounds: int = 200, slots: int = 16,
           theta: float = 0.1, theta_cls: float = 0.6, temperature: float = 1.5,
           enough: int = 4, augment: bool = True, length: int = 96,
-          pairs: int = 5, seed: int = 0, device="cuda", log=None):
+          pairs: int = 5, grid_slots: int = 9, seed: int = 0, device="cuda",
+          log=None, prune=None, free: float = 0.0):
     """Search ``tasks`` with ``slots`` tasks of ``chains`` chains at a time,
     ``rounds`` model calls per chain at most, stopping a task once ``enough``
-    distinct programs are found."""
+    distinct programs are found. With ``prune`` (an
+    :class:`ldt.abstract.Abstract`), a chain whose partial tree is in sound
+    conflict with the demonstrations restarts before it is total. A
+    fraction ``free`` of each task's chains never kills and never trusts the
+    conflict head: the model only orders their pins, so they search the whole
+    typed domain and an unsound kill cannot hide a program from every chain."""
     rng = random.Random(seed)
     gen = torch.Generator(device=device).manual_seed(seed)
     queue = list(range(len(tasks)))
@@ -66,7 +73,8 @@ def solve(space: Space, typing: Typing, model, tasks: list[Task],
     perms = [None] * B
     top = typing.top.to(device)
     x = top[None].expand(B, -1, -1).clone()
-    inputs = outputs = None
+    guided = (torch.arange(B, device=device) % chains) >= round(free * chains)
+    theta_row = torch.where(guided, theta, 0.0)[:, None, None]
     t0 = time.time()
 
     def load(s):
@@ -78,16 +86,15 @@ def solve(space: Space, typing: Typing, model, tasks: list[Task],
         rows = range(s * chains, (s + 1) * chains)
         chain_perms = [colour_permutation(rng) if augment and k else
                        list(range(10)) for k in range(chains)]
-        inp, out, _, _ = encode([tasks[i]] * chains, space, 1, length, pairs,
-                                chain_perms)
-        inputs[rows.start:rows.stop] = inp.to(device)
-        outputs[rows.start:rows.stop] = out.to(device)
+        demos[rows.start:rows.stop] = encode(
+            [tasks[i]] * chains, space, 1, length, pairs, chain_perms,
+            grid_slots)[0].to(device)
         for r, p in zip(rows, chain_perms):
             perms[r] = p
         x[rows.start:rows.stop] = top
 
-    inputs = torch.zeros(B, pairs, length, dtype=torch.long, device=device)
-    outputs = torch.zeros_like(inputs)
+    demos = encode(tasks[:1], space, 1, length, pairs, None, grid_slots)[0]
+    demos = demos.new_zeros((B, ) + demos.shape[1:]).to(device)
     for s in range(slots):
         load(s)
     sizes = {}
@@ -99,13 +106,28 @@ def solve(space: Space, typing: Typing, model, tasks: list[Task],
                 b = torch.zeros(x.shape, device=device)
                 k = torch.full((B, ), -1e4, device=device)
             else:
-                memory, pad = model.encode_demos(inputs, outputs)
+                memory, pad = model.encode_demos(demos)
                 cand, conf = model(x, memory, pad)
                 b, k = cand[-1].float(), conf[-1].float()
-        x1 = typing(x & ~(b.sigmoid() < theta))
+        x1 = typing(x & ~(b.sigmoid() < theta_row))
         empty = ~x1[:, 0].any(-1)
-        restart = empty | (k.sigmoid() > theta_cls)
+        restart = empty | ((k.sigmoid() > theta_cls) & guided)
         total = is_total(x1) & ~restart
+        if prune is not None:
+            from ldt.abstract import partial_tree
+            states = x1.cpu().numpy()
+            for r in (~restart & ~total).nonzero()[:, 0].tolist():
+                i = slot_task[r // chains]
+                if i is None:
+                    continue
+                inverse = [0] * 10
+                for c, v in enumerate(perms[r]):
+                    inverse[v] = c
+                tree = partial_tree(space, states[r])
+                if tree is not None and prune.conflict(
+                        _relabel(tree, space, inverse), tasks[i].train):
+                    restart[r] = True
+                    results[i].pruned += 1
         for r in total.nonzero()[:, 0].tolist():
             s = r // chains
             i = slot_task[s]
@@ -142,6 +164,16 @@ def solve(space: Space, typing: Typing, model, tasks: list[Task],
                 if log and slot_task[s] is None or (log and len(queue) % 50 == 0):
                     log({"left": len(queue), "sec": round(time.time() - t0)})
     return results
+
+
+def _relabel(tree, space, perm):
+    """A tree with its colour constants mapped by ``perm``."""
+    if tree is None:
+        return None
+    head = tree.head
+    if head[0] == "c" and head[1:].isdigit():
+        head = f"c{perm[int(head[1:])]}"
+    return type(tree)(head, tuple(_relabel(a, space, perm) for a in tree.args))
 
 
 def score(tasks: list[Task], results: list[Result]) -> dict:
