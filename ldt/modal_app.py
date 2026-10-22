@@ -172,7 +172,9 @@ def run_benchmark(space, typing, model, bench, eval_json, unseal, path,
     from ldt.abstract import Abstract, transformers_1d
     tasks = benchmark(bench, unseal)
     ev = json.loads(eval_json)
-    pruner = Abstract(space, transformers_1d()) if prune else None
+    # the refined transformers read 1D objects; 2D falls back to TOP
+    transformers = transformers_1d() if bench == "1darc" else {}
+    pruner = Abstract(space, transformers) if prune else None
     t0 = time.time()
     res = solve(space, typing, model, tasks, prune=pruner, **ev)
     out = score(tasks, res) | {"sec": round(time.time() - t0)}
