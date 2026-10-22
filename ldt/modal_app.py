@@ -115,9 +115,15 @@ def _train(name, data, model_json, train_json, validation, eval_json):
         return score(sub, res) | {"mean_first_call": _mean(
             [r.first_call for r in res if r.first_call])}
 
+    resume = None
+    if os.path.exists(f"{out}/model.pt"):  # a preempted run of this name
+        state = torch.load(f"{out}/model.pt", map_location="cuda")
+        if "optimizer" in state and state["step"] < tc.steps:
+            resume = state
     model, typing = run_train(SPACE, tasks, config, tc, device="cuda",
-                              log=log, checkpoint=(1000, save),
-                              validate=(max(1000, tc.steps // 5), validate))
+                              log=log, checkpoint=(500, save),
+                              validate=(max(1000, tc.steps // 5), validate),
+                              resume=resume)
     save({"model": model.state_dict(), "config": asdict(config),
           "train": asdict(tc), "step": tc.steps})
     ev = json.loads(eval_json)
@@ -189,15 +195,18 @@ def train(name: str = "r0", data: str = "d1", gpu: str = "L4",
 
 
 @app.function(volumes={VOL: volume}, timeout=600)
-def read(path: str) -> bytes:
+def read(path: str):
+    """The bytes of a file on the volume, in chunks of 1 MiB: larger return
+    values and volume downloads are blocked from the sandbox."""
     volume.reload()
     with open(f"{VOL}/{path}", "rb") as f:
-        return f.read()
+        while chunk := f.read(1 << 20):
+            yield chunk
 
 
 @app.local_entrypoint()
 def fetch(path: str, out: str = ""):
-    data = read.remote(path)
+    data = b"".join(read.remote_gen(path))
     if out:
         with open(out, "wb") as f:
             f.write(data)

@@ -141,7 +141,11 @@ def schedule(step, c: TrainConfig):
 
 
 def train(space: Space, tasks: list[Task], config: Config, c: TrainConfig,
-          device="cuda", log=print, checkpoint=None, validate=None):
+          device="cuda", log=print, checkpoint=None, validate=None,
+          resume: dict | None = None):
+    """Train from scratch, or from ``resume`` (a checkpoint's state, whose
+    pool is drawn afresh), saving ``checkpoint[1](state)`` every
+    ``checkpoint[0]`` steps."""
     torch.manual_seed(c.seed)
     typing = Typing(space).to(device)
     model = LDT(space.n_positions, len(space.vocab), config).to(device)
@@ -150,12 +154,18 @@ def train(space: Space, tasks: list[Task], config: Config, c: TrainConfig,
     opt = torch.optim.AdamW([{"params": decay, "weight_decay": c.weight_decay},
                              {"params": rest, "weight_decay": 0.0}],
                             lr=c.lr, betas=(0.9, 0.95))
+    start = 0
+    if resume is not None:
+        model.load_state_dict(resume["model"])
+        opt.load_state_dict(resume["optimizer"])
+        start = resume["step"]
+        log({"resumed": start})
     pool = Pool(space, typing, tasks, c, device)
     gen = torch.Generator(device=device).manual_seed(c.seed)
     stats, t0 = {}, time.time()
     amp = torch.autocast(device_type="cuda", dtype=torch.bfloat16)\
         if device == "cuda" else torch.autocast("cpu", enabled=False)
-    for step in range(c.steps):
+    for step in range(start, c.steps):
         for g in opt.param_groups:
             g["lr"] = c.lr * schedule(step, c)
         model.train()
@@ -214,6 +224,8 @@ def train(space: Space, tasks: list[Task], config: Config, c: TrainConfig,
         if validate is not None and (step + 1) % validate[0] == 0:
             log({"step": step + 1, "validation": validate[1](model, typing)})
         if checkpoint is not None and (step + 1) % checkpoint[0] == 0:
-            checkpoint[1]({"model": model.state_dict(), "config": asdict(config),
-                           "train": asdict(c), "step": step + 1})
+            checkpoint[1]({"model": model.state_dict(),
+                           "optimizer": opt.state_dict(),
+                           "config": asdict(config), "train": asdict(c),
+                           "step": step + 1})
     return model, typing
