@@ -76,6 +76,14 @@ family, so its ceiling is 901/901 by construction: what is measured is search, n
 | LDT pilot, 3k steps (15 min on one H100), ≤ 3,200 model calls per task | 388 | ~$1 + 11 min |
 | the same model, half the chains kill-free | 482 | 8 min |
 | the same, with abstract pruning (19,321 chains restarted early) | 482 | 9 min |
+| **LDT r1, 20k steps (1.5 h on one H100, ~$6), half the chains kill-free** | **514** | 7.4 min, 222 calls to the first program |
+
+Per family, r1 against enumeration at 10⁶ programs: equal on the eleven families both nearly
+saturate; ahead on `recolor_oe` (50 against 0: the program, 11 nodes with a parity test, is beyond
+10⁶ programs in size order), `scale_dp` (6 against 4) and `recolor_cmp` (3 against 0); behind on
+`mirror` (0 against 41), whose program nests a second binder (`pick`'s predicate inside
+`map_segs`'s), and `move_2p_dp` (4 against 5). Neither solves `pcopy_*` or `recolor_cnt`, whose
+programs have 10 to 19 nodes.
 
 Kill-free chains are what an unsound kill needs: the pilot learned to kill the right shift constant
 in `move_2p`/`move_3p` (12 and 10 of 50), and with half its chains only ordering pins they come back
