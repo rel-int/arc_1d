@@ -48,7 +48,6 @@ class TrainConfig:
     max_solutions: int = 16
     length: int = 96
     pairs: int = 5
-    slots: int = 9
     seed: int = 0
     log_every: int = 100
 
@@ -118,7 +117,7 @@ class Pool:
         perms = [colour_permutation(self.rng) for _ in index]
         demos, Y, valid = encode(
             tasks, self.space, self.c.max_solutions, self.c.length,
-            self.c.pairs, perms, self.c.slots)
+            self.c.pairs, perms)
         if self.demos is None:
             self.demos = demos.new_zeros(
                 (self.c.batch, ) + demos.shape[1:]).to(self.device)

@@ -53,7 +53,7 @@ def solve(space: Space, typing: Typing, model, tasks: list[Task],
           chains: int = 32, rounds: int = 200, slots: int = 16,
           theta: float = 0.1, theta_cls: float = 0.6, temperature: float = 1.5,
           enough: int = 4, augment: bool = True, length: int = 96,
-          pairs: int = 5, grid_slots: int = 9, seed: int = 0, device="cuda",
+          pairs: int = 5, seed: int = 0, device="cuda",
           log=None, prune=None, free: float = 0.0):
     """Search ``tasks`` with ``slots`` tasks of ``chains`` chains at a time,
     ``rounds`` model calls per chain at most, stopping a task once ``enough``
@@ -87,13 +87,13 @@ def solve(space: Space, typing: Typing, model, tasks: list[Task],
         chain_perms = [colour_permutation(rng) if augment and k else
                        list(range(10)) for k in range(chains)]
         demos[rows.start:rows.stop] = encode(
-            [tasks[i]] * chains, space, 1, length, pairs, chain_perms,
-            grid_slots)[0].to(device)
+            [tasks[i]] * chains, space, 1, length, pairs,
+            chain_perms)[0].to(device)
         for r, p in zip(rows, chain_perms):
             perms[r] = p
         x[rows.start:rows.stop] = top
 
-    demos = encode(tasks[:1], space, 1, length, pairs, None, grid_slots)[0]
+    demos = encode(tasks[:1], space, 1, length, pairs)[0]
     demos = demos.new_zeros((B, ) + demos.shape[1:]).to(device)
     for s in range(slots):
         load(s)

@@ -36,7 +36,6 @@ class Config:
     dropout: float = 0.1
     checkpoint: bool = True
     grid: str = "1d"
-    slots: int = 9
     size: int = 30
     patch: int = 3
 
@@ -106,10 +105,11 @@ class LDT(nn.Module):
                                            batch_first=True, norm_first=True),
                 c.demo_layers, enable_nested_tensor=False)
         else:
-            self.colour = nn.Embedding(12, c.dim)
+            self.colour_in = nn.Embedding(12, c.dim)
+            self.colour_out = nn.Embedding(12, c.dim)
             self.row = nn.Parameter(torch.randn(c.size, 1, c.dim) * 0.02)
             self.col = nn.Parameter(torch.randn(1, c.size, c.dim) * 0.02)
-            self.slot = nn.Embedding(c.slots, c.dim)
+            self.pair = nn.Embedding(c.max_pairs, c.dim)
             self.patchify = nn.Conv2d(c.dim, c.dim, c.patch, stride=c.patch)
             self.demo = nn.ModuleList(SelfBlock(c) for _ in range(c.demo_layers))
         self.lattice = nn.Linear(n_labels, c.dim)
@@ -120,13 +120,15 @@ class LDT(nn.Module):
         self.conflict = nn.Linear(c.dim, 1)
 
     def encode_demos(self, demos):
-        """One dimension: ``demos`` is (batch, pairs, 2, length), each pair's
-        input and output colour codes cell by cell, ``PAD`` beyond a grid's
-        length, ``MASK`` for the unknown test output. Two dimensions: it is
-        (batch, slots, size, size), the grids input, output, ..., test input,
-        ``PAD`` outside each grid, cut into ``patch`` x ``patch`` tokens."""
-        if self.config.grid == "1d":
-            inputs, outputs = demos[:, :, 0], demos[:, :, 1]
+        """``demos`` is (batch, pairs, 2, length) in one dimension and (batch,
+        pairs, 2, size, size) in two: each pair's input and output colour
+        codes cell by cell, ``PAD`` outside a grid, ``MASK`` for the unknown
+        test output, as :func:`ldt.data.encode` lays them out. A pair's two
+        grids share a cell's token, so that what changed is local; two
+        dimensions are then cut into ``patch`` x ``patch`` tokens."""
+        c = self.config
+        inputs, outputs = demos[:, :, 0], demos[:, :, 1]
+        if c.grid == "1d":
             B, M, L = inputs.shape
             h = (self.colour_in(inputs) + self.colour_out(outputs)
                  + self.cell.weight[:L] + self.pair.weight[:M, None])
@@ -134,11 +136,12 @@ class LDT(nn.Module):
             h = self.demo(h.reshape(B, M * L, -1),
                           src_key_padding_mask=pad.reshape(B, M * L))
             return h, pad.reshape(B, M * L)
-        B, S, H, W = demos.shape
-        h = self.colour(demos) + self.row + self.col  # (B, S, H, W, D)
-        h = self.patchify(h.reshape(B * S, H, W, -1).permute(0, 3, 1, 2))
-        h = h.flatten(2).transpose(1, 2).reshape(B, S, -1, self.config.dim)
-        h = (h + self.slot.weight[:S, None]).reshape(B, -1, self.config.dim)
+        B, M, H, W = inputs.shape
+        h = self.colour_in(inputs) + self.colour_out(outputs)\
+            + self.row + self.col  # (B, M, H, W, D)
+        h = self.patchify(h.reshape(B * M, H, W, -1).permute(0, 3, 1, 2))
+        h = h.flatten(2).transpose(1, 2).reshape(B, M, -1, c.dim)
+        h = (h + self.pair.weight[:M, None]).reshape(B, -1, c.dim)
         for block in self.demo:
             h = block(h)
         return h, None

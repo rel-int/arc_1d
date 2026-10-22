@@ -36,7 +36,8 @@ image = (
     .add_local_dir("/home/user/ARC-AGI-2/data", "/data/ARC-AGI-2/data")
     .add_local_python_source("ldt")
 )
-app = modal.App("ldt-arc", image=image)
+# a second deployment (LDT_APP) runs new code while older calls finish
+app = modal.App(os.environ.get("LDT_APP", "ldt-arc"), image=image)
 volume = modal.Volume.from_name("ldt-arc", create_if_missing=True)
 VOL = "/vol"
 

@@ -20,6 +20,7 @@ EVALUATE = '{"chains": 32, "rounds": 100, "slots": 32, "free": 0.5}'
 
 def main():
     parser = argparse.ArgumentParser()
+    parser.add_argument("--app", default="ldt-arc")
     sub = parser.add_subparsers(dest="job", required=True)
     train = sub.add_parser("train")
     train.add_argument("--name", required=True)
@@ -45,13 +46,13 @@ def main():
     evaluate.add_argument("--tag", default="")
     a = parser.parse_args()
     if a.job == "train":
-        fn = modal.Function.from_name("ldt-arc", f"train_{a.gpu.lower()}")
+        fn = modal.Function.from_name(a.app, f"train_{a.gpu.lower()}")
         train_json = json.dumps({"steps": a.steps, "batch": a.batch}
                                 | json.loads(a.extra))
         call = fn.spawn(a.name, a.data, a.model, train_json, a.validation,
                         a.evaluate, a.dsl, a.benches, a.unseal)
     else:
-        fn = modal.Function.from_name("ldt-arc", "evaluate_remote")
+        fn = modal.Function.from_name(a.app, "evaluate_remote")
         call = fn.spawn(a.run, a.bench, a.evaluate, a.unseal, bool(a.prune),
                         bool(a.uniform), a.dsl, a.tag)
     print(call.object_id)
