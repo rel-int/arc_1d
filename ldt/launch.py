@@ -3,6 +3,7 @@ Launch jobs on the deployed app, so that they outlive the shell that started
 them (a ``modal run`` client that dies takes its app down with it).
 
     modal deploy modal_app.py
+    python launch.py generate --name d3 --dsl 2d --max-size 12 --exact 5
     python launch.py train --name r1 --data d1 --gpu H100 --steps 20000
     python launch.py evaluate --run r1 --bench 1darc --evaluate '{"free": 0.5}'
 
@@ -44,8 +45,18 @@ def main():
     evaluate.add_argument("--uniform", type=int, default=0)
     evaluate.add_argument("--dsl", default="1d")
     evaluate.add_argument("--tag", default="")
+    generate = sub.add_parser("generate")
+    generate.add_argument("--name", required=True)
+    generate.add_argument("--shards", type=int, default=250)
+    generate.add_argument("--per-shard", type=int, default=400)
+    generate.add_argument("--dsl", default="1d")
+    generate.add_argument("--max-size", type=int, default=20)
+    generate.add_argument("--exact", type=int, default=0)
     a = parser.parse_args()
-    if a.job == "train":
+    if a.job == "generate":
+        call = modal.Function.from_name(a.app, "generate_all").spawn(
+            a.name, a.shards, a.per_shard, 0, a.dsl, a.max_size, a.exact)
+    elif a.job == "train":
         fn = modal.Function.from_name(a.app, f"train_{a.gpu.lower()}")
         train_json = json.dumps({"steps": a.steps, "batch": a.batch}
                                 | json.loads(a.extra))

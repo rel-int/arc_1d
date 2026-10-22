@@ -63,15 +63,15 @@ def benchmark(bench: str, unseal: str = ""):
     return arc.load(root, bench.split("-", 1)[1])
 
 
-@app.function(cpu=1.0, memory=2048, timeout=3600, volumes={VOL: volume})
+@app.function(cpu=1.0, memory=4096, timeout=3 * 3600, volumes={VOL: volume})
 def generate_shard(name: str, seed: int, n: int, sizes=(2, 20),
-                   dsl: str = "1d"):
+                   dsl: str = "1d", exact: int = 0):
     import random
     from ldt.synth import Generator
     from ldt.data import Task
     SPACE, inputs = signature(dsl)
     rng = random.Random(seed)
-    g = Generator(SPACE, sizes=tuple(sizes), inputs=inputs)
+    g = Generator(SPACE, sizes=tuple(sizes), inputs=inputs, exact=exact)
     tasks, t0 = [], time.time()
     while len(tasks) < n:
         task = g.task(rng)
@@ -87,14 +87,24 @@ def generate_shard(name: str, seed: int, n: int, sizes=(2, 20),
     return {"seed": seed, "n": n, "sec": round(time.time() - t0, 1)}
 
 
-@app.local_entrypoint()
-def generate(name: str = "d1", shards: int = 8, per_shard: int = 100,
-             start: int = 0, dsl: str = "1d", max_size: int = 20):
-    args = [(name, start + s, per_shard, (2, max_size), dsl)
+@app.function(cpu=0.25, timeout=6 * 3600)
+def generate_all(name: str, shards: int, per_shard: int, start: int = 0,
+                 dsl: str = "1d", max_size: int = 20, exact: int = 0):
+    """Every shard of a dataset, from inside Modal, so that no local client
+    has to outlive the generation."""
+    args = [(name, start + s, per_shard, (2, max_size), dsl, exact)
             for s in range(shards)]
     secs = [r["sec"] for r in generate_shard.starmap(args)]
-    print(json.dumps({"shards": len(secs), "tasks": shards * per_shard,
-                      "mean_sec": sum(secs) / len(secs)}))
+    return {"shards": len(secs), "tasks": shards * per_shard,
+            "mean_sec": sum(secs) / len(secs)}
+
+
+@app.local_entrypoint()
+def generate(name: str = "d1", shards: int = 8, per_shard: int = 100,
+             start: int = 0, dsl: str = "1d", max_size: int = 20,
+             exact: int = 0):
+    print(json.dumps(generate_all.remote(name, shards, per_shard, start, dsl,
+                                         max_size, exact)))
 
 
 def load_shards(name: str, limit: int | None = None):

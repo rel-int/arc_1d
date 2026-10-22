@@ -169,12 +169,19 @@ class Generator:
         max_solutions : The cap K on the solution set.
         inputs : ``(style, grid)``: draws a style shared by a task's inputs,
             and an input in that style; one-dimensional grids by default.
+        exact : The largest program size for which the solution set is
+            exact: every program of the minimal size consistent with the
+            demonstrations, found by enumerating every program up to that
+            size, which also replaces a locally minimal program by a
+            globally minimal one.
     """
 
     def __init__(self, space: Space, sizes=(2, 20), demos=(3, 4),
-                 bank_size=3, max_solutions=32, inputs=None):
+                 bank_size=3, max_solutions=32, inputs=None, exact=0):
         self.space, self.sizes, self.demos = space, sizes, demos
         self.inputs = inputs or (random_style, random_grid)
+        self.exact = exact
+        self._small = None
         self.sampler = Sampler(space)
         self.bank_size, self.max_solutions = bank_size, max_solutions
         self.sizes_available = [
@@ -224,11 +231,32 @@ class Generator:
                 continue
             train, test = pairs[:n_train], pairs[n_train:]
             program = self.shrink(program, train)
+            solutions = None
+            if program.size <= self.exact:
+                solutions = self.minimal(train, program.size)
+                program = solutions[0]
             if all(run(self.space.compile(program), x) == y for x, y in test)\
                     and any(x != y for x, y in test):
-                return Task(program, train, test,
-                            self.solutions(program, train))
+                return Task(program, train, test, solutions
+                            or self.solutions(program, train))
         return None
+
+    def minimal(self, train, size: int) -> list[Tree]:
+        """Every program of the smallest size consistent with ``train``, up
+        to ``max_solutions``, given that one of size ``size`` is."""
+        if self._small is None:
+            self._small = [(t, self.space.compile(t))
+                           for s in range(1, self.exact + 1)
+                           for t in self.space.trees(s)]
+        found = []
+        for tree, f in self._small:
+            if tree.size > size or found and tree.size > found[0].size:
+                break
+            if all(run(f, x) == y for x, y in train):
+                found.append(tree)
+                if len(found) == self.max_solutions:
+                    break
+        return found
 
     def consistent(self, tree: Tree, train) -> bool:
         f = self.space.compile(tree)
