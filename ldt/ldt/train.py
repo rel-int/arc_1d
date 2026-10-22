@@ -24,7 +24,8 @@ import torch
 import torch.nn.functional as F
 
 from ldt.bohm import Space
-from ldt.data import Task, colour_permutation, encode
+from ldt.data import (Task, colour_permutation, encode, label_permutation,
+                      permute)
 from ldt.lattice import Typing, alpha, consistent, is_total, pin
 from ldt.model import LDT, Config
 
@@ -107,6 +108,7 @@ class Pool:
         self.prev = self.x.clone()
         self.age = torch.zeros(B, dtype=torch.long, device=device)
         self.perm = [None] * B
+        self.train = [None] * B  # the demonstrations in the permuted frame
         self.refill(torch.ones(B, dtype=torch.bool, device=device))
 
     def refill(self, rows: torch.Tensor):
@@ -114,7 +116,7 @@ class Pool:
         if not index:
             return
         tasks = [self.rng.choice(self.tasks) for _ in index]
-        perms = [colour_permutation(self.rng) for _ in index]
+        perms = [self.permutation(t) for t in tasks]
         demos, Y, valid = encode(
             tasks, self.space, self.c.max_solutions, self.c.length,
             self.c.pairs, perms)
@@ -130,6 +132,17 @@ class Pool:
         self.age[idx] = 0
         for i, t, p in zip(index, tasks, perms):
             self.task[i], self.perm[i] = t, p
+            self.train[i] = permute(t.train, p)
+
+    def permutation(self, task: Task) -> list[int]:
+        """A random colour permutation, unless the task's program does not
+        commute with it (some primitives break ties by colour index), in
+        which case the identity."""
+        perm = colour_permutation(self.rng)
+        labels = label_permutation(self.space, perm)[task.solutions[0]]
+        if verify(self.space, labels, permute(task.train, perm)):
+            return perm
+        return list(range(10))
 
 
 def schedule(step, c: TrainConfig):
@@ -191,12 +204,7 @@ def train(space: Space, tasks: list[Task], config: Config, c: TrainConfig,
             # a total tree outside Y may still be consistent with the demos
             for i in (total & ~ok).nonzero()[:, 0].tolist():
                 labels = x1[i].float().argmax(-1).cpu().numpy()
-                inverse = [0] * 10
-                for k, v in enumerate(pool.perm[i]):
-                    inverse[v] = k
-                from ldt.data import label_permutation
-                labels = label_permutation(space, inverse)[labels]
-                if verify(space, labels, pool.task[i].train):
+                if verify(space, labels, pool.train[i]):
                     ok[i] = True
             solved = total & ok
             truly_conflicted = ~ok

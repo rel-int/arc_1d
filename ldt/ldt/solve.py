@@ -42,11 +42,21 @@ class Result:
     pruned: int = 0  # chains restarted by abstract evaluation
 
 
-def rank(result: Result, space_sizes: dict) -> list:
-    votes = defaultdict(list)
-    for program, outputs in result.programs.items():
-        votes[outputs].append(space_sizes[program])
-    return sorted(votes, key=lambda o: (-len(votes[o]), min(votes[o])))
+def rank(result: Result, space_sizes: dict, attempts: int = 2) -> list:
+    """ARC's attempts: for each test input, its outputs over the consistent
+    programs, by the number of programs giving them, then by the size of the
+    smallest; an undefined output is never an attempt."""
+    if not result.programs:
+        return []
+    ranked = []
+    for j in range(len(next(iter(result.programs.values())))):
+        votes = defaultdict(list)
+        for program, outputs in result.programs.items():
+            if outputs[j] is not None:
+                votes[outputs[j]].append(space_sizes[program])
+        ranked.append(sorted(
+            votes, key=lambda o: (-len(votes[o]), min(votes[o])))[:attempts])
+    return ranked
 
 
 def solve(space: Space, typing: Typing, model, tasks: list[Task],
@@ -159,7 +169,7 @@ def solve(space: Space, typing: Typing, model, tasks: list[Task],
             slot_rounds[s] += 1
             results[i].calls += chains
             if slot_rounds[s] >= rounds or len(results[i].programs) >= enough:
-                results[i].attempts = rank(results[i], sizes)[:2]
+                results[i].attempts = rank(results[i], sizes)
                 load(s)
                 if log and slot_task[s] is None or (log and len(queue) % 50 == 0):
                     log({"left": len(queue), "sec": round(time.time() - t0)})
@@ -176,12 +186,21 @@ def _relabel(tree, space, perm):
     return type(tree)(head, tuple(_relabel(a, space, perm) for a in tree.args))
 
 
+def correct(task: Task, attempts: list) -> tuple[bool, bool, float]:
+    """Top-1, pass@2 (every test output among its two attempts) and the
+    official per-output credit (the share of test outputs among them)."""
+    truth = [y for _, y in task.test]
+    if len(attempts) != len(truth):
+        return False, False, 0.0
+    hits = [y in a for y, a in zip(truth, attempts)]
+    first = [bool(a) and a[0] == y for y, a in zip(truth, attempts)]
+    return all(first), all(hits), sum(hits) / len(truth)
+
+
 def score(tasks: list[Task], results: list[Result]) -> dict:
-    """Top-1 and pass@2 (every test output right among two attempts)."""
-    top1 = pass2 = 0
-    for task, result in zip(tasks, results):
-        truth = tuple(y for _, y in task.test)
-        top1 += bool(result.attempts) and result.attempts[0] == truth
-        pass2 += truth in result.attempts[:2]
-    return {"tasks": len(tasks), "top1": top1, "pass2": pass2,
+    """Top-1, pass@2 and per-output pass@2 over a benchmark."""
+    rows = [correct(t, r.attempts) for t, r in zip(tasks, results)]
+    return {"tasks": len(tasks), "top1": sum(r[0] for r in rows),
+            "pass2": sum(r[1] for r in rows),
+            "pass2_outputs": round(sum(r[2] for r in rows), 2),
             "found": sum(bool(r.programs) for r in results)}

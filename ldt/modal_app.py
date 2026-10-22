@@ -53,14 +53,17 @@ def signature(dsl: str):
 
 
 def benchmark(bench: str, unseal: str = ""):
+    """The tasks of a benchmark; an evaluation split only with ``unseal``,
+    the claim it scores, and never ARC-AGI-1's evaluation tasks inside
+    ARC-AGI-2's training split."""
     from ldt.data import load_1darc
     from ldt import arc
-    if unseal:
-        os.environ[arc.UNSEAL] = unseal
     if bench == "1darc":
         return load_1darc("/data/1D-ARC")
     root = {"arc1": "/data/ARC-AGI", "arc2": "/data/ARC-AGI-2"}[bench[:4]]
-    return arc.load(root, bench.split("-", 1)[1])
+    exclude = arc.sealed_ids("/data/ARC-AGI") if bench[:4] == "arc2" else ()
+    return arc.load(root, bench.split("-", 1)[1], claim=unseal,
+                    exclude=set(exclude))
 
 
 @app.function(cpu=1.0, memory=4096, timeout=3 * 3600, volumes={VOL: volume})
@@ -129,8 +132,8 @@ def _train(name, data, model_json, train_json, validation, eval_json,
     out = f"{VOL}/runs/{name}"
     os.makedirs(out, exist_ok=True)
     tasks = load_shards(data)
-    held = tasks[-validation:]
-    tasks = tasks[:-validation]
+    held = tasks[len(tasks) - validation:]
+    tasks = tasks[:len(tasks) - validation]
     config = Config(**json.loads(model_json))
     tc = TrainConfig(**json.loads(train_json))
     logf = open(f"{out}/log.jsonl", "a")
@@ -148,6 +151,8 @@ def _train(name, data, model_json, train_json, validation, eval_json,
         volume.commit()
 
     def validate(model, typing):
+        if not held:
+            return {}
         model.eval()
         sub = held[:128]
         res = solve(SPACE, typing, model, sub, chains=16, rounds=40, slots=32,
@@ -156,17 +161,23 @@ def _train(name, data, model_json, train_json, validation, eval_json,
         return score(sub, res) | {"mean_first_call": _mean(
             [r.first_call for r in res if r.first_call])}
 
-    resume = None
-    if os.path.exists(f"{out}/model.pt"):  # a preempted run of this name
+    state = None
+    if os.path.exists(f"{out}/model.pt"):  # a preempted or repeated run
         state = torch.load(f"{out}/model.pt", map_location="cuda")
-        if "optimizer" in state and state["step"] < tc.steps:
-            resume = state
-    model, typing = run_train(SPACE, tasks, config, tc, device="cuda",
-                              log=log, checkpoint=(500, save),
-                              validate=(max(1000, tc.steps // 5), validate),
-                              resume=resume)
-    save({"model": model.state_dict(), "config": asdict(config),
-          "train": asdict(tc), "step": tc.steps})
+    if state is not None and state["step"] >= tc.steps:
+        from ldt.lattice import Typing
+        from ldt.model import LDT
+        log({"finished": state["step"]})
+        typing = Typing(SPACE).to("cuda")
+        model = LDT(SPACE.n_positions, len(SPACE.vocab), config).to("cuda")
+        model.load_state_dict(state["model"])
+    else:
+        model, typing = run_train(
+            SPACE, tasks, config, tc, device="cuda", log=log,
+            checkpoint=(500, save), resume=state,
+            validate=(max(1000, tc.steps // 5), validate))
+        save({"model": model.state_dict(), "config": asdict(config),
+              "train": asdict(tc), "step": tc.steps})
     model.eval()
     report = {"validation": validate(model, typing)}
     for bench in filter(None, benches.split(",")):
@@ -244,13 +255,14 @@ def _mean(xs):
 
 
 def families(tasks, results):
+    from ldt.solve import correct
     out = {}
     for t, r in zip(tasks, results):
-        truth = tuple(y for _, y in t.test)
+        top1, pass2, _ = correct(t, r.attempts)
         row = out.setdefault(t.family, [0, 0, 0])
         row[0] += 1
-        row[1] += bool(r.attempts) and r.attempts[0] == truth
-        row[2] += truth in r.attempts[:2]
+        row[1] += top1
+        row[2] += pass2
     return out
 
 
@@ -315,16 +327,16 @@ def enumerate_chunk(budget: int, start: int, stop: int):
     from ldt.dsl1d import SPACE
     from ldt.data import load_1darc
     from ldt.enumerate import search
+    from ldt.solve import correct
     out = []
     for task in load_1darc("/data/1D-ARC")[start:stop]:
         t0 = time.time()
         r = search(SPACE, task, budget)
-        truth = tuple(y for _, y in task.test)
+        top1, pass2, _ = correct(task, r.attempts)
         out.append({"name": task.name, "family": task.family,
                     "first": r.first_call, "found": len(r.programs),
                     "tried": r.calls, "sec": round(time.time() - t0, 2),
-                    "top1": bool(r.attempts) and r.attempts[0] == truth,
-                    "pass2": truth in r.attempts[:2],
+                    "top1": top1, "pass2": pass2,
                     "program": str(next(iter(r.programs), ""))})
     return out
 

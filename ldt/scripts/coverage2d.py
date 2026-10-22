@@ -22,12 +22,14 @@ import time
 from collections import Counter
 from multiprocessing import Pool
 
-from ldt.arc import load
+from ldt.arc import load, sealed_ids
 from ldt.bohm import Tree, is_variable
 from ldt.dsl2d import SPACE
 from ldt.enumerate import search
+from ldt.solve import correct
 
 TASKS = []
+ROOT = "/home/user/ARC-AGI"
 
 
 def heads(tree: Tree):
@@ -36,8 +38,10 @@ def heads(tree: Tree):
         yield from heads(arg)
 
 
-def init(root: str):
-    TASKS.extend(load(root, "training"))
+def init(root: str, arc1: str):
+    exclude = sealed_ids(arc1) if os.path.abspath(root) != os.path.abspath(
+        arc1) else set()
+    TASKS.extend(load(root, "training", exclude=exclude))
 
 
 def run(args) -> dict:
@@ -49,13 +53,13 @@ def run(args) -> dict:
     except Exception as e:
         return {"name": task.name, "error": f"{type(e).__name__}: {e}"}
     seconds = time.process_time() - t0
-    truth = tuple(y for _, y in task.test)
+    top1, pass2, _ = correct(task, result.attempts)
     first = next(iter(result.programs), None)
     return {
         "name": task.name,
         "consistent": first is not None,
-        "top1": bool(result.attempts) and result.attempts[0] == truth,
-        "pass2": truth in result.attempts[:2],
+        "top1": top1,
+        "pass2": pass2,
         "program": None if first is None else str(first),
         "size": None if first is None else first.size,
         "heads": [] if first is None else [
@@ -72,7 +76,7 @@ def report(rows: list[dict], budget: int, wall: float) -> dict:
     found = [r for r in ok if r["consistent"]]
     calls, cpu = sum(r["calls"] for r in ok), sum(r["seconds"] for r in ok)
     return {
-        "split": "ARC-AGI-1 training",
+        "split": f"{os.path.basename(os.path.abspath(ROOT))} training",
         "budget": budget,
         "tasks": len(rows),
         "consistent": len(found),
@@ -98,11 +102,17 @@ def main():
     parser.add_argument("--budget", type=int, required=True)
     parser.add_argument("--workers", type=int, default=4)
     parser.add_argument("--root", default="/home/user/ARC-AGI")
+    parser.add_argument("--arc1", default="/home/user/ARC-AGI",
+                        help="ARC-AGI-1, whose evaluation ids stay sealed "
+                             "inside any other root's training split")
     parser.add_argument("--out", required=True)
     args = parser.parse_args()
-    n = len(load(args.root, "training"))
+    global ROOT
+    ROOT = args.root
+    init(args.root, args.arc1)
+    n = len(TASKS)
     t0 = time.time()
-    with Pool(args.workers, init, (args.root, )) as pool:
+    with Pool(args.workers, init, (args.root, args.arc1)) as pool:
         rows = []
         for row in pool.imap_unordered(
                 run, [(i, args.budget) for i in range(n)], chunksize=1):

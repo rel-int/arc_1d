@@ -36,7 +36,7 @@ def search(space: Space, task: Task, budget: int, enough: int = 4,
         if tried >= budget or len(result.programs) >= enough:
             break
     result.calls = tried
-    result.attempts = rank(result, sizes)[:2]
+    result.attempts = rank(result, sizes)
     return result
 
 

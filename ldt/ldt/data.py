@@ -69,6 +69,16 @@ def label_permutation(space: Space, perm: list[int]) -> np.ndarray:
     return table
 
 
+def permute(pairs: list, perm: list[int]) -> list:
+    """Pairs of grids with their colours mapped by ``perm``."""
+    table = np.asarray(perm)
+
+    def grid(g):
+        g = table[np.asarray(g)].tolist()
+        return tuple(map(tuple, g)) if isinstance(g[0], list) else tuple(g)
+    return [(grid(x), grid(y)) for x, y in pairs]
+
+
 def is_2d(task: Task) -> bool:
     return isinstance(task.train[0][0][0], tuple)
 
