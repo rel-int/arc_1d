@@ -94,3 +94,28 @@ def test_a_grid_of_booleans_is_not_a_grid():
     from ldt.rearc import is_grid
     assert is_grid(((0, 1), (2, 3)))
     assert not is_grid(((True, False), (False, True)))
+
+
+def test_canonical_forgets_dead_code_and_independent_order():
+    space = tiny()
+    a = Program([Statement("neg", ("I", )), Statement("add", ("I", "ONE"))])
+    space3 = StraightSpace(space.functions, space.constants, statements=3,
+                           arity=2)
+    one = Program([Statement("neg", ("I", )), Statement("add", ("I", "ONE")),
+                   Statement("add", ("x1", "x2"))])
+    two = Program([Statement("add", ("I", "ONE")), Statement("neg", ("I", )),
+                   Statement("add", ("x2", "x1"))])
+    assert space3.canonical(one) == space3.canonical(two)
+    assert space3.canonical(space3.canonical(one)) == space3.canonical(one)
+    assert space3.compile(space3.canonical(one))(5) == space3.compile(one)(5)
+    assert space.canonical(a) == Program([Statement("add", ("I", "ONE"))])
+
+
+def test_a_program_that_runs_too_long_is_undefined():
+    import time
+    space = StraightSpace({"slow": lambda a: time.sleep(5) or a}, {},
+                          statements=1, arity=1, seconds=0.2)
+    start = time.time()
+    with pytest.raises(Undefined):
+        space.compile(Program([Statement("slow", ("I", ))]))(1)
+    assert time.time() - start < 2

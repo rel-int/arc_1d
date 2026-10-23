@@ -216,6 +216,10 @@ class Space:
         """The top element: every label at every position, before typing."""
         return np.ones((self.n_positions, len(self.vocab)), dtype=bool)
 
+    def canonical(self, tree: Tree) -> Tree:
+        """Böhm trees in normal form are already canonical."""
+        return tree
+
     def typing(self):
         """The projection as a module on the device, see
         :class:`ldt.lattice.Typing`."""

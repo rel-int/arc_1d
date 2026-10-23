@@ -88,8 +88,7 @@ def programs(root: str = REARC, statements: int = 32) -> dict[str, Program]:
     out = {}
     for function in tree.body:
         if isinstance(function, ast.FunctionDef):
-            program = parse(function)
-            program = sp.dead_code(program)
+            program = sp.canonical(parse(function))
             if len(program) <= statements and sp.check(program):
                 out[function.name[len("verify_"):]] = program
     return out
@@ -154,7 +153,7 @@ class Generator:
                         or len(set(outputs)) == 1:
                     continue
                 pairs = [(x, y) for (x, _), y in zip(pairs, outputs)]
-                program = self.space.dead_code(program)
+                program = self.space.canonical(program)
                 family = f"mutant:{name}"
             return Task(family, pairs[:n], pairs[n:],
                         [self.space.encode(program)], family=family)

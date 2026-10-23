@@ -13,7 +13,7 @@ import time
 
 from ldt.bohm import Space
 from ldt.data import Task
-from ldt.solve import Result, rank
+from ldt.solve import Result, complete, rank
 from ldt.synth import run
 
 
@@ -31,9 +31,9 @@ def search(space: Space, task: Task, budget: int, enough: int = 4,
                 sizes[tree] = size
                 if result.first_call is None:
                     result.first_call = tried
-            if tried >= budget or len(result.programs) >= enough:
+            if tried >= budget or complete(result) >= enough:
                 break
-        if tried >= budget or len(result.programs) >= enough:
+        if tried >= budget or complete(result) >= enough:
             break
     result.calls = tried
     result.attempts = rank(result, sizes)
@@ -58,7 +58,7 @@ def library(space, task: Task, programs, enough: int = 4) -> Result:
             sizes[program] = program.size
             if result.first_call is None:
                 result.first_call = tried
-            if len(result.programs) >= enough:
+            if complete(result) >= enough:
                 break
     result.calls = len(programs)
     result.attempts = rank(result, sizes)

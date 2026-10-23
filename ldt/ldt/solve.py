@@ -42,6 +42,11 @@ class Result:
     pruned: int = 0  # chains restarted by abstract evaluation
 
 
+def complete(result: Result) -> int:
+    """The programs found that answer every test input."""
+    return sum(None not in outputs for outputs in result.programs.values())
+
+
 def rank(result: Result, space_sizes: dict, attempts: int = 2) -> list:
     """ARC's attempts: for each test input, its outputs over the consistent
     programs, by the number of programs giving them, then by the size of the
@@ -73,6 +78,10 @@ def solve(space: Space, typing: Typing, model, tasks: list[Task],
     fraction ``free`` of each task's chains never kills and never trusts the
     conflict head: the model only orders their pins, so they search the whole
     typed domain and an unsound kill cannot hide a program from every chain."""
+    if prune is not None and not hasattr(space, "prims"):
+        raise ValueError("abstract evaluation reads Böhm trees")
+    # a colour permutation is undone on programs through c0..c9 only
+    augment = augment and "c1" in space.index
     rng = random.Random(seed)
     gen = torch.Generator(device=device).manual_seed(seed)
     queue = list(range(len(tasks)))
@@ -150,6 +159,8 @@ def solve(space: Space, typing: Typing, model, tasks: list[Task],
             labels = label_permutation(space, inverse)[labels]
             tree = space.decode(labels)
             restart[r] = True
+            if tree is not None:
+                tree = space.canonical(tree)
             if tree is None or tree in results[i].programs:
                 continue
             f = space.compile(tree)
@@ -168,7 +179,7 @@ def solve(space: Space, typing: Typing, model, tasks: list[Task],
                 continue
             slot_rounds[s] += 1
             results[i].calls += chains
-            if slot_rounds[s] >= rounds or len(results[i].programs) >= enough:
+            if slot_rounds[s] >= rounds or complete(results[i]) >= enough:
                 results[i].attempts = rank(results[i], sizes)
                 load(s)
                 if log and slot_task[s] is None or (log and len(queue) % 50 == 0):

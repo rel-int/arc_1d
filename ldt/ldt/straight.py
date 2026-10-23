@@ -24,6 +24,9 @@ typing projection would not be sound, and checking is left to execution.
 from __future__ import annotations
 
 import inspect
+import signal
+import threading
+from contextlib import contextmanager
 from dataclasses import dataclass
 
 import numpy as np
@@ -54,6 +57,29 @@ def is_reference(label: str) -> bool:
     return label[0] == "x" and label[1:].isdigit()
 
 
+class TimeLimit(Exception):
+    pass
+
+
+@contextmanager
+def time_limit(seconds: float | None):
+    """Raise :class:`TimeLimit` in the block after ``seconds``, where a timer
+    signal can be delivered (the main thread); no limit elsewhere."""
+    if not seconds or threading.current_thread() is not threading.main_thread():
+        yield
+        return
+
+    def handler(signum, frame):
+        raise TimeLimit(f"over {seconds} s")
+    previous = signal.signal(signal.SIGALRM, handler)
+    signal.setitimer(signal.ITIMER_REAL, seconds)
+    try:
+        yield
+    finally:
+        signal.setitimer(signal.ITIMER_REAL, 0)
+        signal.signal(signal.SIGALRM, previous)
+
+
 class StraightSpace:
     """
     Parameters:
@@ -62,11 +88,14 @@ class StraightSpace:
         statements : The largest number of statements.
         arity : The largest number of arguments.
         check_output : Whether a value is a valid output, e.g. a grid.
+        seconds : The time a program may take on one input, beyond which it
+            is undefined: a short program can build a 27,000 x 27,000 canvas.
     """
 
     def __init__(self, functions: dict, constants: dict, statements: int = 32,
-                 arity: int = 4, check_output=None):
+                 arity: int = 4, check_output=None, seconds: float = 1.0):
         self.functions, self.constants = functions, constants
+        self.seconds = seconds
         self.statements, self.arity = statements, arity
         self.check_output = check_output or (lambda value: True)
         self.vocab = [ABSENT, "I"] + [
@@ -210,11 +239,12 @@ class StraightSpace:
         def run(x):
             env = {"I": x}
             try:
-                for i, (head, args) in enumerate(steps):
-                    f = env[head] if head in env else functions[head]
-                    env[f"x{i + 1}"] = f(*[value(env, a) for a in args])
+                with time_limit(self.seconds):
+                    for i, (head, args) in enumerate(steps):
+                        f = env[head] if head in env else functions[head]
+                        env[f"x{i + 1}"] = f(*[value(env, a) for a in args])
                 out = env[f"x{len(steps)}"]
-            except Exception as e:
+            except Exception as e:  # TimeLimit and MemoryError included
                 raise Undefined(str(e)) from e
             if not self.check_output(out):
                 raise Undefined("not a valid output")
@@ -235,6 +265,34 @@ class StraightSpace:
         return Program(Statement(rename.get(program[k].head, program[k].head),
                                  tuple(rename.get(a, a) for a in program[k].args))
                        for k in keep)
+
+
+    def canonical(self, program: Program) -> Program:
+        """One representative of the programs equal up to dead code and the
+        order of independent statements: the used statements in the
+        topological order that puts first the smallest statement written
+        with the representative's own names, the output last."""
+        program = self.dead_code(program)
+        n = len(program)
+        deps = [{int(a[1:]) - 1 for a in (s.head, ) + s.args
+                 if is_reference(a)} for s in program]
+        placed, rename, out = set(), {}, []
+        while len(out) < n:
+            ready = [i for i in range(n) if i not in placed
+                     and deps[i] <= placed and (i == n - 1 or len(out) < n - 1)]
+            if len(ready) > 1:
+                ready = [i for i in ready if i != n - 1]
+
+            def written(i):
+                s = program[i]
+                return (rename.get(s.head, s.head),
+                        tuple(rename.get(a, a) for a in s.args))
+            i = min(ready, key=written)
+            head, args = written(i)
+            out.append(Statement(head, args))
+            placed.add(i)
+            rename[f"x{i + 1}"] = f"x{len(out)}"
+        return Program(out)
 
 
 class StraightTyping(torch.nn.Module):
