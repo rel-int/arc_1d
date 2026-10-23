@@ -23,3 +23,7 @@ further read.
 | 2026-10-23 | ARC-AGI-1 evaluation | LDT r4b (straight-line arc-dsl, re-arc data, 20k steps), 32 chains × 160 rounds, half kill-free, no colour augmentation, 1 s per program run, pass@2 | toumix-agents |
 | 2026-10-23 | ARC-AGI-2 evaluation | library control, as above | toumix-agents |
 | 2026-10-23 | ARC-AGI-2 evaluation | LDT r4b, as above | toumix-agents |
+
+Results of the arc-dsl round, 2026-10-23. ARC-AGI-1 evaluation: library 21/400, LDT r4b 11/400 (8 of
+them training verifiers the library also finds, 3 new programs on tasks it does not). ARC-AGI-2
+evaluation: 0/120 for both, all 120 tasks scored.

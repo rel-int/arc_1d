@@ -119,3 +119,48 @@ to a fifth. Part of that was the α target: in 2D most programs have equivalent 
 (`rot90 ∘ flip_h = rot180 ∘ transpose`), and α over one-edit variants labels them wrong. Exact α
 (every minimal consistent program up to size 5) took validation from 4 to 6–8 of 128 held-out tasks
 and halved the calls to a first program, but did not close the gap to enumeration.
+
+### arc-dsl: straight-line programs, re-arc supervision
+
+The ceiling above was the hand-written DSL. The second round takes Hodel's arc-dsl as the signature
+(160 functions, 28 constants) and writes programs as its solvers are written: straight-line
+statements `x_i = f(a, ...)` with atomic arguments, i.e. Böhm trees with sharing (`ldt/straight.py`).
+Positions are 32 statements × (head + 4 arguments); the structure is a star (the program's length is
+shared, each statement independent given it), so the projection is exact arc consistency on it,
+checked against brute force. There is no typing projection: arc-dsl's annotations are too loose to be
+sound, so typing is left to the network and to execution.
+
+Supervision is re-arc (`ldt/rearc.py`): its 1,000 generated examples per ARC-AGI-1 training task,
+each kept by re-arc only if the task's verifier reproduces it, with the verifier — a straight-line
+arc-dsl program, parsed from source, canonicalised — as the target. 295 of the 400 fit 32 statements.
+Half the training tasks are verifier tasks, half one-edit mutants of a verifier run on that task's
+inputs: programs near the ARC distribution that no training task uses.
+
+The control is the **library**: every one of the 295 verifiers run as it is. A solution the LDT finds
+and the library does not is a program no training task gives.
+
+| method | held-out re-arc (128) | ARC-AGI-1 training (400) | ARC-AGI-1 evaluation (400) | ARC-AGI-2 evaluation (120) |
+|---|---:|---:|---:|---:|
+| untrained Scott-domain search, 5,120 calls per task | — | 0 | — | — |
+| library: 295 verifiers as they are | — | 294 | **21** | **0** |
+| LDT r4b (20k steps, ~1.2 h on one H100), 32 chains × 160 rounds | 108 | 54 | **11** | **0** |
+
+Of the LDT's eleven on ARC-AGI-1 evaluation, eight are training verifiers it reproduced (the library
+finds those too) and **three are programs no verifier is**, on tasks the library does not solve:
+
+- `0c786b71`: `vmirror`, `hconcat`, `hmirror`, `vconcat`, `hmirror` — a five-statement composition;
+- `d4b1c2b1`: `upscale(I, numcolors(I))`;
+- `ea959feb`: the verifier of `484b58aa` with one argument of `objects` changed (`F` to `T`), the
+  edit its mutant tasks train.
+
+That is a small number and the clearest result of the round: learned deduction over programs
+composes and edits beyond the programs it was trained on, while the library is pure recall. Two
+gaps stand out. On ARC-AGI-1 training the LDT finds 54 against the library's 294: it learned
+re-arc's distribution of each task better than the original instances (84% on held-out re-arc
+tasks), and building a 15-statement program field by field rarely survives every choice. And
+ARC-AGI-2 stays at 0 for every method, the library included: none of its tasks is a re-arc
+transformation or one edit away from one.
+
+The validation set is held-out re-arc tasks of the same 295 verifiers, so it measures recall within
+re-arc's distribution, not generalisation; the evaluation splits are the claim. Each of the four
+evaluation numbers is one read, logged in `EVALUATION.md` before it ran.

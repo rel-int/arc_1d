@@ -18,4 +18,8 @@ USER's answers in the session (2026-10-22): programs first then the hybrid with 
 - [ ] hybrid, second half: a transductive output-lattice head whose state prunes programs
 - [x] 2D DSL, synthetic data (one-edit and exact α), ARC-AGI-1 and ARC-AGI-2 public evaluation:
   enumeration 7/400 and 0/120, LDT 3/400 and 0/120, each one logged read
+- [x] USER's go (10-23): arc-dsl as straight-line programs (`ldt/straight.py`), re-arc supervision
+  (`ldt/rearc.py`), library control; a second review (8 findings, 6 fixed, 1 refuted, 1 for new data)
+- [x] r4b: held-out re-arc 108/128, ARC-AGI-1 training 54/400 (library 294), ARC-AGI-1 evaluation
+  11/400 with 3 new programs (library 21), ARC-AGI-2 evaluation 0/120 (library 0)
 - [ ] README with results; delete this file
