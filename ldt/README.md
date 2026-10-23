@@ -164,3 +164,14 @@ transformation or one edit away from one.
 The validation set is held-out re-arc tasks of the same 295 verifiers, so it measures recall within
 re-arc's distribution, not generalisation; the evaluation splits are the claim. Each of the four
 evaluation numbers is one read, logged in `EVALUATION.md` before it ran.
+
+## Open
+
+- **The hybrid's second half.** Abstract evaluation maps program states to output-lattice states (the
+  first half, above); the other direction is a transductive head that predicts the test output as the
+  paper's grid lattice and ranks partial programs whose abstract test output is disjoint from it (a
+  learned state can rank but not prune soundly). Deferred: the next round starts from TRM (USER,
+  2026-10-23).
+- **Canonical-order retraining.** Data made since the second review has canonical targets; r4b was
+  trained before, against one statement order.
+- **Longer programs.** 105 of re-arc's 400 verifiers exceed 32 statements.
