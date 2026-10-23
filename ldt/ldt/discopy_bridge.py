@@ -106,6 +106,8 @@ class Bridge:
 
 
 def _strict(prim):
+    """The primitive on values: ``python.Function`` evaluates every argument
+    first, so ``ite`` is strict here, unlike :meth:`ldt.bohm.Space.compile`."""
     if prim.lazy:
         return lambda *args: prim.fn(*[(lambda a=a: a) for a in args])
     return prim.fn

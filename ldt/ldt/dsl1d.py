@@ -78,7 +78,7 @@ def gap_right(g: Grid, o: Obj) -> int:
     """The number of background cells between ``o`` and the next cell of ``g``,
     or to the border when there is none."""
     end = o[0] + len(o[1]) - 1
-    x = end + 1
+    x = max(end + 1, 0)
     while x < len(g) and not g[x]:
         x += 1
     return x - end - 1

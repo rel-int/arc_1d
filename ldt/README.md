@@ -46,12 +46,13 @@ branching step "pin one position" is then exactly forcing one argument of a lazy
 **Reference semantics.** `ldt/discopy_bridge.py` maps every tree to a `discopy.closed` term with the
 signature as free variables, reduces it with `closed.LeftmostOutermost` and reads the `BohmTree` back;
 evaluation by `closed.Functor` into `python.Function` agrees with the fast interpreter of
-`Space.compile` (`tests/test_discopy.py`).
+`Space.compile` wherever it is defined (`tests/test_discopy.py`). It is call by value, so it raises on
+an undefined `ite` branch that `Space.compile` never takes.
 
 ## Running it
 
 ```shell
-uv run pytest                                   # discopy tests need the [discopy] extra
+uv run --extra dev --extra discopy pytest
 modal run modal_app.py::generate --name d1 --shards 200 --per-shard 500
 modal run --detach modal_app.py::train --name r1 --data d1 --gpu H100 --steps 20000
 modal run modal_app.py::evaluate --run r1 --prune 1 --evaluate '{"free": 0.5}'
@@ -94,7 +95,8 @@ reaches the 10–19-node programs that `pcopy_*` and `recolor_cnt` need.
 Kill-free chains are what an unsound kill needs: the pilot learned to kill the right shift constant
 in `move_2p`/`move_3p` (12 and 10 of 50), and with half its chains only ordering pins they come back
 to 47 and 48. Abstract pruning is sound but, with the 1D transformers as coarse as they are, changes
-no outcome.
+no outcome. Its 19,321 restarts were counted before `join` learnt to tell 1D objects from grids,
+which prunes a little more (91 against 87 of 223 sampled partial `ite` trees).
 
 ### ARC-AGI
 
@@ -132,9 +134,12 @@ sound, so typing is left to the network and to execution.
 
 Supervision is re-arc (`ldt/rearc.py`): its 1,000 generated examples per ARC-AGI-1 training task,
 each kept by re-arc only if the task's verifier reproduces it, with the verifier — a straight-line
-arc-dsl program, parsed from source, canonicalised — as the target. 295 of the 400 fit 32 statements.
-Half the training tasks are verifier tasks, half one-edit mutants of a verifier run on that task's
-inputs: programs near the ARC distribution that no training task uses.
+arc-dsl program, parsed from source, canonicalised — as the target. 295 of the 400 fit 32 statements
+in this round; 298 do since the canonical form writes a repeated statement once.
+Each draw is a verifier task or, with probability one half, a one-edit mutant of a verifier run on
+that task's inputs: a program near the ARC distribution that no training task uses. Most mutants are
+undefined and the draw starts again, so about one task in ten is a mutant; r4b's data had about one
+in four, more than half of them giving the verifier's own outputs.
 
 The control is the **library**: every one of the 295 verifiers run as it is. A solution the LDT finds
 and the library does not is a program no training task gives.
@@ -174,4 +179,4 @@ evaluation numbers is one read, logged in `EVALUATION.md` before it ran.
   2026-10-23).
 - **Canonical-order retraining.** Data made since the second review has canonical targets; r4b was
   trained before, against one statement order.
-- **Longer programs.** 105 of re-arc's 400 verifiers exceed 32 statements.
+- **Longer programs.** 102 of re-arc's 400 verifiers exceed 32 statements (105 in this round).

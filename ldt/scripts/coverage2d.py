@@ -41,7 +41,7 @@ def heads(tree: Tree):
 def init(root: str, arc1: str):
     exclude = sealed_ids(arc1) if os.path.abspath(root) != os.path.abspath(
         arc1) else set()
-    TASKS.extend(load(root, "training", exclude=exclude))
+    TASKS[:] = load(root, "training", exclude=exclude)
 
 
 def run(args) -> dict:

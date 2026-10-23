@@ -6,7 +6,8 @@ an object (the row and column of its top-left corner and its patch, ``-1`` off
 the object, which may stretch outside the grid), ``N`` a small number, ``C`` a
 colour, ``B`` a boolean, ``D`` a direction. Programs have type ``G -> G``.
 
-The background of a grid is its most common colour, the smaller on ties.
+The background of a grid is 0 when it appears, its most common colour
+otherwise, the smaller on ties.
 Objects are the 8-connected components of non-background cells of one colour,
 blobs those of any colour, both ordered by the top-left corner of their
 bounding box, then colour. A grid is rebuilt from objects by painting them in

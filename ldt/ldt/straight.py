@@ -268,16 +268,17 @@ class StraightSpace:
 
 
     def canonical(self, program: Program) -> Program:
-        """One representative of the programs equal up to dead code and the
-        order of independent statements: the used statements in the
-        topological order that puts first the smallest statement written
-        with the representative's own names, the output last."""
+        """One representative of the programs equal up to dead code, repeated
+        statements and the order of independent statements: the used
+        statements, each written once, in the topological order that puts
+        first the smallest statement written with the representative's own
+        names, the output last."""
         program = self.dead_code(program)
         n = len(program)
         deps = [{int(a[1:]) - 1 for a in (s.head, ) + s.args
                  if is_reference(a)} for s in program]
         placed, rename, out = set(), {}, []
-        while len(out) < n:
+        while len(placed) < n:
             ready = [i for i in range(n) if i not in placed
                      and deps[i] <= placed and (i == n - 1 or len(out) < n - 1)]
             if len(ready) > 1:
@@ -287,11 +288,12 @@ class StraightSpace:
                 s = program[i]
                 return (rename.get(s.head, s.head),
                         tuple(rename.get(a, a) for a in s.args))
-            i = min(ready, key=written)
-            head, args = written(i)
+            head, args = min(map(written, ready))
             out.append(Statement(head, args))
-            placed.add(i)
-            rename[f"x{i + 1}"] = f"x{len(out)}"
+            for i in ready:
+                if written(i) == (head, args):
+                    placed.add(i)
+                    rename[f"x{i + 1}"] = f"x{len(out)}"
         return Program(out)
 
 

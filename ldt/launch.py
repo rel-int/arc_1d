@@ -7,8 +7,10 @@ them (a ``modal run`` client that dies takes its app down with it).
     python launch.py train --name r1 --data d1 --gpu H100 --steps 20000
     python launch.py evaluate --run r1 --bench 1darc --evaluate '{"free": 0.5}'
 
-Each job writes its log on the volume, read back with
-``modal run modal_app.py::fetch --path runs/<name>/log.jsonl``.
+A training job writes its log on the volume, read back with
+``modal run modal_app.py::fetch --path runs/<name>/log.jsonl``; an
+evaluation writes ``runs/<run>/eval-<bench><tag>.json``, an enumeration
+``enum/<name>.json`` and a generation only its shards, ``data/<name>/``.
 """
 
 import argparse

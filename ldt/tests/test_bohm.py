@@ -1,4 +1,5 @@
 import random
+from collections import Counter
 
 import numpy as np
 import pytest
@@ -42,11 +43,16 @@ def test_propagate_fixes_a_tree():
 
 
 def test_propagate_is_exact():
-    """The projection keeps exactly the labels used by some typed tree: every
-    label it keeps at the root is the head of some enumerated tree."""
+    """The projection keeps exactly the labels used by some typed tree: it
+    keeps every label of every enumerated tree, and at the root and its
+    children every label it keeps is used by one of size at most 7."""
     top = SPACE.propagate(SPACE.top())
-    heads = {t.head for s in range(1, 5) for t in SPACE.trees(s)}
-    assert {SPACE.vocab[i] for i in np.flatnonzero(top[0])} == heads
+    used = np.zeros_like(top)
+    for s in range(1, 8):
+        for t in SPACE.trees(s):
+            used[np.arange(SPACE.n_positions), SPACE.encode(t)] = True
+    assert (used <= top).all()
+    assert (used[:1 + SPACE.arity] == top[:1 + SPACE.arity]).all()
 
 
 def test_propagate_kills_untypable():
@@ -66,3 +72,11 @@ def test_sampler_counts_match_enumeration(size):
     assert all(SPACE.check(t) and t.size == size for t in trees)
     rng = random.Random(size)
     assert sampler.sample(rng, size) in set(trees)
+
+
+def test_sampler_is_uniform():
+    sampler, trees = Sampler(SPACE), set(SPACE.trees(5))
+    rng = random.Random(0)
+    draws = Counter(sampler.sample(rng, 5) for _ in range(50 * len(trees)))
+    assert set(draws) == trees
+    assert max(draws.values()) < 3 * min(draws.values())

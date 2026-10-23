@@ -109,6 +109,15 @@ def test_canonical_forgets_dead_code_and_independent_order():
     assert space3.canonical(space3.canonical(one)) == space3.canonical(one)
     assert space3.compile(space3.canonical(one))(5) == space3.compile(one)(5)
     assert space.canonical(a) == Program([Statement("add", ("I", "ONE"))])
+    space4 = StraightSpace(space.functions, space.constants, statements=4,
+                           arity=2)
+    neg = Statement("neg", ("I", ))
+    one = Program([neg, neg, Statement("add", ("x1", "ONE")),
+                   Statement("add", ("x3", "x2"))])
+    two = Program([neg, neg, Statement("add", ("x2", "ONE")),
+                   Statement("add", ("x3", "x1"))])
+    assert space4.canonical(one) == space4.canonical(two) == Program([
+        neg, Statement("add", ("x1", "ONE")), Statement("add", ("x2", "x1"))])
 
 
 def test_a_program_that_runs_too_long_is_undefined():

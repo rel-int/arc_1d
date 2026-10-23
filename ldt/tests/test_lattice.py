@@ -37,8 +37,9 @@ def test_alpha_and_pinning_reach_a_solution():
     x = typing.top[None].expand(4, -1, -1).clone()
     target, none = alpha(x, Y, valid)
     assert not none.any() and (target <= x).all()
-    logits = torch.where(target, 5.0, -5.0)
     gen = torch.Generator().manual_seed(0)
     for _ in range(100):
+        target, _ = alpha(x, Y, valid)
+        logits = torch.where(target, 0.0, float("-inf"))
         x = typing(pin(x, logits, typing.parent, 1.0, gen))
     assert is_total(x).all() and consistent(x, Y, valid).any(1).all()

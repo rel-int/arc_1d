@@ -46,7 +46,7 @@ def search_all(space: Space, tasks: list[Task], budget: int, **kwargs):
     return results, time.time() - t0
 
 
-def library(space, task: Task, programs, enough: int = 4) -> Result:
+def library(space, task: Task, programs) -> Result:
     """The control for a library of known programs, e.g. re-arc's verifiers:
     each run on the demonstrations as it is, so that a solution found by
     search but not here is one no training task's program gives."""
@@ -58,8 +58,6 @@ def library(space, task: Task, programs, enough: int = 4) -> Result:
             sizes[program] = program.size
             if result.first_call is None:
                 result.first_call = tried
-            if complete(result) >= enough:
-                break
     result.calls = len(programs)
     result.attempts = rank(result, sizes)
     return result

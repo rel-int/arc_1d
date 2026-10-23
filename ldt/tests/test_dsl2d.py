@@ -46,6 +46,7 @@ W = ((0, 0, 0, 0, 0),
 
 def test_background_and_objects():
     assert bg(((1, 2), (2, 1))) == 1
+    assert bg(((1, 1), (1, 0))) == 0
     assert objs(H) == (O3, O5) and blobs(H) == (O3, O5)
     two = ((1, 2, 0, 0),
            (2, 0, 0, 0),
@@ -95,8 +96,7 @@ def test_objects_to_grid():
     assert fn("map_blobs")(lambda o: o, H) == H
     assert fn("keep_objs")(lambda o: o[2][0][0] == 5, H) == (
         (0, ) * 5, (0, ) * 5, (0, 0, 0, 0, 5), (0, 0, 0, 0, 5))
-    assert fn("paint")((0, 0, ((7, -1), )), H)[:2] == (
-        (7, 0, 0, 0, 0), (0, 3, 3, 0, 0))
+    assert fn("paint")((0, 0, ((7, -1), )), H) == ((7, 0, 0, 0, 0), ) + H[1:]
     assert fn("crop")(O3) == ((3, 3), (3, 0))
     assert fn("trim")(H) == ((3, 3, 0, 0), (3, 0, 0, 5), (0, 0, 0, 5))
     with pytest.raises(Undefined):
@@ -110,7 +110,7 @@ def test_fill_enclosed_and_connect():
             (0, 1, 1, 1, 0),
             (0, 0, 0, 0, 0))
     filled = fn("fill_enclosed")(4, ring)
-    assert filled[2] == (0, 1, 4, 1, 0) and filled[0] == ring[0]
+    assert filled == ring[:2] + ((0, 1, 4, 1, 0), ) + ring[3:]
     lines = ((2, 0, 0, 2, 0),
              (0, 0, 0, 0, 0),
              (3, 0, 0, 0, 0),

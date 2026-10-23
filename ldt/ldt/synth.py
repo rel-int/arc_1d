@@ -225,9 +225,9 @@ class Generator:
                 continue
             if all(x == y for x, y in pairs):
                 continue
-            if len({y for _, y in pairs}) == 1 and len({x for x, _ in pairs}) > 1:
+            if len({y for _, y in pairs}) == 1:
                 continue
-            if not any(any(y) for _, y in pairs):
+            if not any(np.any(y) for _, y in pairs):
                 continue
             train, test = pairs[:n_train], pairs[n_train:]
             program = self.shrink(program, train)
@@ -316,15 +316,3 @@ class Generator:
                     and scope + arg_ty.args == target_scope:
                 yield arg
             yield from self.hoists(arg, arg_ty, scope, target_ty, target_context)
-
-
-def to_arrays(space: Space, task: Task, max_solutions: int) -> dict:
-    """The task as arrays: demos padded with -1, solutions as label vectors."""
-    labels = np.zeros((max_solutions, space.n_positions), dtype=np.int16)
-    for k, t in enumerate(task.solutions[:max_solutions]):
-        labels[k] = space.encode(t)
-    return {
-        "train": task.train, "test": task.test,
-        "solutions": labels, "n_solutions": min(len(task.solutions),
-                                                max_solutions),
-    }

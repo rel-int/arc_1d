@@ -13,8 +13,9 @@ demonstrations and a test pair of one re-arc task, its verifier the solution.
 A mutant task edits one field of a verifier — a head for another function of
 its arity, a constant for another, a function value for another of its arity,
 a reference for another in scope — runs it on that task's inputs, and keeps it
-when it is defined, moves something and does not send every input to one
-output: a program near the ARC distribution that no task of it uses.
+when it is defined, moves something, does not send every input to one output
+and differs from the verifier on one of them: a program near the ARC
+distribution that no task of it uses.
 """
 
 from __future__ import annotations
@@ -113,7 +114,7 @@ class Generator:
     Parameters:
         root : Where re-arc is.
         statements : The largest number of statements.
-        mutants : The share of mutant tasks.
+        mutants : The chance that a draw tries a mutant.
         demos : The range of the number of demonstrations.
         exclude : Task ids never drawn.
     """
@@ -150,7 +151,8 @@ class Generator:
                 except Undefined:
                     continue
                 if all(x == y for (x, _), y in zip(pairs, outputs))\
-                        or len(set(outputs)) == 1:
+                        or len(set(outputs)) == 1\
+                        or outputs == [y for _, y in pairs]:
                     continue
                 pairs = [(x, y) for (x, _), y in zip(pairs, outputs)]
                 program = self.space.canonical(program)

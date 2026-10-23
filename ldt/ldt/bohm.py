@@ -377,6 +377,9 @@ class Space:
             head_ty = self.head_type(head, scope)
             if head_ty is None or head_ty.base != ty.base:
                 continue
+            if any(len(scope) + len(a.args) > self.max_vars
+                   for a in head_ty.args):
+                continue  # its argument would bind an unnameable variable
             if not head_ty.args:
                 if size == 1:
                     yield Tree(head)

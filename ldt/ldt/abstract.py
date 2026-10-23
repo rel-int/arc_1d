@@ -72,10 +72,8 @@ def join(a, b):
         return a
     if isinstance(a, Top) or isinstance(b, Top):
         return TOP
-    if isinstance(a, Cells) or isinstance(b, Cells) or isinstance(a, tuple)\
-            and a and isinstance(a[0], int) and isinstance(b, tuple)\
-            and b and isinstance(b[0], int):
-        ma, mb = cells(a), cells(b)
+    ma, mb = cells(a), cells(b)
+    if ma is not None or mb is not None:
         if ma is None or mb is None or len(ma.masks) != len(mb.masks):
             return TOP
         return Cells(tuple(x | y for x, y in zip(ma.masks, mb.masks)))
@@ -241,13 +239,14 @@ class Abstract:
                 thunks = [(lambda a=a: a(env)) for a in args]
                 if abstract is not None:
                     return abstract(*thunks)
-                values = [t() for t in thunks]
-            else:
-                values = [a(env) for a in args]
+                try:
+                    return prim.fn(*thunks)
+                except TypeError:
+                    return TOP  # an abstract condition
+            values = [a(env) for a in args]
             if all(concrete(v) or callable(v) for v in values):
                 try:
-                    return prim.fn(*values) if not prim.lazy else prim.fn(
-                        *[(lambda v=v: v) for v in values])
+                    return prim.fn(*values)
                 except Undefined:
                     raise
                 except TypeError:

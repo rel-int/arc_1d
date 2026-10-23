@@ -24,8 +24,10 @@ import time
 import modal
 
 COMMIT = "1e74dc4cb4c58d8160e1fbd0ba638eb745f37147"
-# a clone of https://github.com/michaelhodel/re-arc (MIT) at e5b7f1d
-REARC = os.environ.get("REARC", "/tmp/claude-0/survey/re-arc")
+ARC1 = "399030444e0ab0cc8b4e199870fb20b863846f34"
+ARC2 = "f3283f727488ad98fe575ea6a5ac981e4a188e49"
+# https://github.com/michaelhodel/re-arc (MIT)
+REARC = "e5b7f1d06362a76f9d3b8c25154ff1fafca897ce"
 
 image = (
     modal.Image.debian_slim(python_version="3.12")
@@ -33,13 +35,13 @@ image = (
     .pip_install("numpy>=2.0", "torch==2.14.1")
     .run_commands(
         "git clone https://github.com/khalil-research/1D-ARC /data/1D-ARC",
-        f"cd /data/1D-ARC && git checkout {COMMIT}")
-    .add_local_dir("/home/user/ARC-AGI/data", "/data/ARC-AGI/data")
-    .add_local_dir("/home/user/ARC-AGI-2/data", "/data/ARC-AGI-2/data")
-    .add_local_file(f"{REARC}/dsl.py", "/data/re-arc/dsl.py")
-    .add_local_file(f"{REARC}/verifiers.py", "/data/re-arc/verifiers.py")
-    .add_local_file(f"{REARC}/re_arc.zip", "/data/re-arc/re_arc.zip")
-    .add_local_file(f"{REARC}/LICENSE", "/data/re-arc/LICENSE")
+        f"cd /data/1D-ARC && git checkout {COMMIT}",
+        "git clone https://github.com/fchollet/ARC-AGI /data/ARC-AGI",
+        f"cd /data/ARC-AGI && git checkout {ARC1}",
+        "git clone https://github.com/arcprize/ARC-AGI-2 /data/ARC-AGI-2",
+        f"cd /data/ARC-AGI-2 && git checkout {ARC2}",
+        "git clone https://github.com/michaelhodel/re-arc /data/re-arc",
+        f"cd /data/re-arc && git checkout {REARC}")
     .add_local_python_source("ldt")
 )
 # a second deployment (LDT_APP) runs new code while older calls finish
@@ -56,6 +58,8 @@ def signature(dsl: str):
     if dsl == "rearc":
         from ldt import rearc
         return rearc.space(), None
+    if dsl != "2d":
+        raise ValueError(f"unknown dsl {dsl!r}: 1d, 2d or rearc")
     from ldt.dsl2d import SPACE
     from ldt import synth2d
     return SPACE, (synth2d.random_style, synth2d.random_grid)
@@ -150,6 +154,7 @@ def _train(name, data, model_json, train_json, validation, eval_json,
     SPACE, _ = signature(dsl)
     out = f"{VOL}/runs/{name}"
     os.makedirs(out, exist_ok=True)
+    volume.reload()
     tasks = load_shards(data)
     if dsl == "rearc":  # shards made before is_grid refused boolean cells
         from ldt.rearc import is_grid
@@ -159,7 +164,8 @@ def _train(name, data, model_json, train_json, validation, eval_json,
         print(json.dumps({"dropped": before - len(tasks)}), flush=True)
     held = tasks[len(tasks) - validation:]
     tasks = tasks[:len(tasks) - validation]
-    config = Config(**json.loads(model_json))
+    config = Config(**{"grid": "1d" if dsl == "1d" else "2d"}
+                    | json.loads(model_json))
     tc = TrainConfig(**json.loads(train_json))
     logf = open(f"{out}/log.jsonl", "a")
 
@@ -200,8 +206,6 @@ def _train(name, data, model_json, train_json, validation, eval_json,
             SPACE, tasks, config, tc, device="cuda", log=log,
             checkpoint=(500, save), resume=state,
             validate=(max(1000, tc.steps // 5), validate))
-        save({"model": model.state_dict(), "config": asdict(config),
-              "train": asdict(tc), "step": tc.steps})
     model.eval()
     report = {"validation": validate(model, typing)}
     for bench in filter(None, benches.split(",")):
@@ -248,6 +252,7 @@ def evaluate_remote(run: str, bench: str, eval_json: str, unseal: str = "",
     typing = SPACE.typing().to("cuda")
     model = None
     if not uniform:
+        volume.reload()
         state = torch.load(f"{VOL}/runs/{run}/model.pt", map_location="cuda")
         model = LDT(SPACE.n_positions, len(SPACE.vocab),
                     Config(**state["config"])).to("cuda")
@@ -257,7 +262,8 @@ def evaluate_remote(run: str, bench: str, eval_json: str, unseal: str = "",
     os.makedirs(out, exist_ok=True)
     report = run_benchmark(SPACE, typing, model, bench, eval_json, unseal,
                            f"{out}/{bench}{tag}", prune)
-    # one file per call: concurrent appends from containers overwrite
+    # one file per run, bench and tag, since concurrent appends from
+    # containers overwrite: calls that run at once need distinct tags
     with open(f"{out}/eval-{bench}{tag}.json", "w") as f:
         json.dump({"bench": bench, "tag": tag, "prune": prune,
                    "uniform": uniform, "eval": json.loads(eval_json),

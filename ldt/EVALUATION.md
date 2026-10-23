@@ -19,6 +19,9 @@ meant for ARC-AGI-2's training split, also dropped the 6 evaluation tasks the tw
 (fixed in `benchmark`). Those 6 are identical to ARC-AGI-1 evaluation tasks, whose read already
 scored them: neither method solves any. Both methods are 0/120 on ARC-AGI-2 evaluation, with no
 further read.
+
+| date | split | claim scored | by |
+|---|---|---|---|
 | 2026-10-23 | ARC-AGI-1 evaluation | library control: re-arc's 295 verifiers that fit 32 statements, each run as it is, pass@2 (arc_1d#3, arc-dsl round) | toumix-agents |
 | 2026-10-23 | ARC-AGI-1 evaluation | LDT r4b (straight-line arc-dsl, re-arc data, 20k steps), 32 chains × 160 rounds, half kill-free, no colour augmentation, 1 s per program run, pass@2 | toumix-agents |
 | 2026-10-23 | ARC-AGI-2 evaluation | library control, as above | toumix-agents |
