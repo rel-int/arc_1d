@@ -41,7 +41,7 @@ def is_grid(value) -> bool:
     width = len(value[0]) if isinstance(value[0], tuple) else 0
     return 1 <= width <= 30 and all(
         isinstance(row, tuple) and len(row) == width
-        and all(isinstance(c, int) and 0 <= c <= 9 for c in row)
+        and all(type(c) is int and 0 <= c <= 9 for c in row)  # not bool
         for row in value)
 
 

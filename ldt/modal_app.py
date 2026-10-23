@@ -151,6 +151,12 @@ def _train(name, data, model_json, train_json, validation, eval_json,
     out = f"{VOL}/runs/{name}"
     os.makedirs(out, exist_ok=True)
     tasks = load_shards(data)
+    if dsl == "rearc":  # shards made before is_grid refused boolean cells
+        from ldt.rearc import is_grid
+        before = len(tasks)
+        tasks = [t for t in tasks if all(
+            is_grid(g) for pair in t.train + t.test for g in pair)]
+        print(json.dumps({"dropped": before - len(tasks)}), flush=True)
     held = tasks[len(tasks) - validation:]
     tasks = tasks[:len(tasks) - validation]
     config = Config(**json.loads(model_json))

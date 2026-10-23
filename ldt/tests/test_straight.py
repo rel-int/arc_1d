@@ -88,3 +88,9 @@ def test_rearc_verifiers_are_programs_of_the_space():
         assert (space.propagate(cand) == cand).all()
         x, y = examples(name)[0]
         assert space.compile(program)(x) == y
+
+
+def test_a_grid_of_booleans_is_not_a_grid():
+    from ldt.rearc import is_grid
+    assert is_grid(((0, 1), (2, 3)))
+    assert not is_grid(((True, False), (False, True)))
