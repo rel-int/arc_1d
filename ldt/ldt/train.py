@@ -160,8 +160,8 @@ def train(space: Space, tasks: list[Task], config: Config, c: TrainConfig,
           resume: dict | None = None):
     """Train from scratch, or from ``resume`` (a checkpoint's state, whose
     pool is drawn afresh), saving ``checkpoint[1](state)`` every
-    ``checkpoint[0]`` steps and once more at the end, a run of no steps
-    included."""
+    ``checkpoint[0]`` steps and at the last step trained, or at step 0 for a
+    run of no steps."""
     torch.manual_seed(c.seed)
     typing = space.typing().to(device)
     model = LDT(space.n_positions, len(space.vocab), config).to(device)
@@ -241,6 +241,7 @@ def train(space: Space, tasks: list[Task], config: Config, c: TrainConfig,
             log({"step": step + 1, "validation": validate[1](model, typing)})
         if checkpoint is not None and (step + 1) % checkpoint[0] == 0:
             checkpoint[1](snapshot(step + 1))
-    if checkpoint is not None:
+    if checkpoint is not None and (start < c.steps and c.steps % checkpoint[0]
+                                   or start == c.steps == 0):
         checkpoint[1](snapshot(c.steps))
     return model, typing
