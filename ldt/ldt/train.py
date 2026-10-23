@@ -26,7 +26,7 @@ import torch.nn.functional as F
 from ldt.bohm import Space
 from ldt.data import (Task, colour_permutation, encode, label_permutation,
                       permute)
-from ldt.lattice import Typing, alpha, consistent, is_total, pin
+from ldt.lattice import alpha, consistent, is_total, pin
 from ldt.model import LDT, Config
 
 
@@ -51,6 +51,7 @@ class TrainConfig:
     pairs: int = 5
     seed: int = 0
     log_every: int = 100
+    augment: bool = True  # colour permutations of each task drawn
 
 
 def verify(space: Space, labels, train) -> bool:
@@ -92,7 +93,7 @@ def losses(cand, conf, x, target, conflicted, c: TrainConfig):
 class Pool:
     """A batch of states in flight, each with its task."""
 
-    def __init__(self, space: Space, typing: Typing, tasks: list[Task],
+    def __init__(self, space: Space, typing: torch.nn.Module, tasks: list[Task],
                  c: TrainConfig, device):
         self.space, self.typing, self.tasks, self.c = space, typing, tasks, c
         self.device = device
@@ -138,6 +139,8 @@ class Pool:
         """A random colour permutation, unless the task's program does not
         commute with it (some primitives break ties by colour index), in
         which case the identity."""
+        if not self.c.augment:
+            return list(range(10))
         perm = colour_permutation(self.rng)
         labels = label_permutation(self.space, perm)[task.solutions[0]]
         if verify(self.space, labels, permute(task.train, perm)):
@@ -160,7 +163,7 @@ def train(space: Space, tasks: list[Task], config: Config, c: TrainConfig,
     pool is drawn afresh), saving ``checkpoint[1](state)`` every
     ``checkpoint[0]`` steps."""
     torch.manual_seed(c.seed)
-    typing = Typing(space).to(device)
+    typing = space.typing().to(device)
     model = LDT(space.n_positions, len(space.vocab), config).to(device)
     decay = [p for n, p in model.named_parameters() if p.dim() >= 2]
     rest = [p for n, p in model.named_parameters() if p.dim() < 2]

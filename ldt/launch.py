@@ -52,6 +52,7 @@ def main():
     generate.add_argument("--dsl", default="1d")
     generate.add_argument("--max-size", type=int, default=20)
     generate.add_argument("--exact", type=int, default=0)
+    generate.add_argument("--mutants", type=float, default=0.5)
     enum = sub.add_parser("enumerate")
     enum.add_argument("--budget", type=int, default=20000)
     enum.add_argument("--bench", default="1darc")
@@ -64,7 +65,8 @@ def main():
             a.budget, a.bench, a.dsl, a.unseal, 10, a.name)
     elif a.job == "generate":
         call = modal.Function.from_name(a.app, "generate_all").spawn(
-            a.name, a.shards, a.per_shard, 0, a.dsl, a.max_size, a.exact)
+            a.name, a.shards, a.per_shard, 0, a.dsl, a.max_size, a.exact,
+            a.mutants)
     elif a.job == "train":
         fn = modal.Function.from_name(a.app, f"train_{a.gpu.lower()}")
         train_json = json.dumps({"steps": a.steps, "batch": a.batch}

@@ -69,7 +69,7 @@ class Bridge:
 
     def _body(self, tree, scope):
         if is_variable(tree.head):
-            head, head_ty = scope[int(tree.head[1:])], None
+            head = scope[int(tree.head[1:])]
             arg_types = self._variable_type(tree, scope)
         else:
             prim = self.space.prims[tree.head]

@@ -216,6 +216,12 @@ class Space:
         """The top element: every label at every position, before typing."""
         return np.ones((self.n_positions, len(self.vocab)), dtype=bool)
 
+    def typing(self):
+        """The projection as a module on the device, see
+        :class:`ldt.lattice.Typing`."""
+        from ldt.lattice import Typing
+        return Typing(self)
+
     def propagate(self, cand: np.ndarray) -> np.ndarray:
         """
         The exact projection onto each position of the well-typed trees within

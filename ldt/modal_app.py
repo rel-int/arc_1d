@@ -24,6 +24,8 @@ import time
 import modal
 
 COMMIT = "1e74dc4cb4c58d8160e1fbd0ba638eb745f37147"
+# a clone of https://github.com/michaelhodel/re-arc (MIT) at e5b7f1d
+REARC = os.environ.get("REARC", "/tmp/claude-0/survey/re-arc")
 
 image = (
     modal.Image.debian_slim(python_version="3.12")
@@ -34,6 +36,10 @@ image = (
         f"cd /data/1D-ARC && git checkout {COMMIT}")
     .add_local_dir("/home/user/ARC-AGI/data", "/data/ARC-AGI/data")
     .add_local_dir("/home/user/ARC-AGI-2/data", "/data/ARC-AGI-2/data")
+    .add_local_file(f"{REARC}/dsl.py", "/data/re-arc/dsl.py")
+    .add_local_file(f"{REARC}/verifiers.py", "/data/re-arc/verifiers.py")
+    .add_local_file(f"{REARC}/re_arc.zip", "/data/re-arc/re_arc.zip")
+    .add_local_file(f"{REARC}/LICENSE", "/data/re-arc/LICENSE")
     .add_local_python_source("ldt")
 )
 # a second deployment (LDT_APP) runs new code while older calls finish
@@ -47,6 +53,9 @@ def signature(dsl: str):
     if dsl == "1d":
         from ldt.dsl1d import SPACE
         return SPACE, None
+    if dsl == "rearc":
+        from ldt import rearc
+        return rearc.space(), None
     from ldt.dsl2d import SPACE
     from ldt import synth2d
     return SPACE, (synth2d.random_style, synth2d.random_grid)
@@ -69,17 +78,25 @@ def benchmark(bench: str, unseal: str = ""):
 
 @app.function(cpu=1.0, memory=4096, timeout=3 * 3600, volumes={VOL: volume})
 def generate_shard(name: str, seed: int, n: int, sizes=(2, 20),
-                   dsl: str = "1d", exact: int = 0):
+                   dsl: str = "1d", exact: int = 0, mutants: float = 0.5):
     import random
     from ldt.synth import Generator
     from ldt.data import Task
     SPACE, inputs = signature(dsl)
     rng = random.Random(seed)
-    g = Generator(SPACE, sizes=tuple(sizes), inputs=inputs, exact=exact)
+    if dsl == "rearc":
+        from ldt.rearc import Generator as Rearc
+        g = Rearc(mutants=mutants)
+    else:
+        g = Generator(SPACE, sizes=tuple(sizes), inputs=inputs, exact=exact)
     tasks, t0 = [], time.time()
     while len(tasks) < n:
         task = g.task(rng)
         if task is None:
+            continue
+        if dsl == "rearc":  # already a ldt.data.Task, solutions encoded
+            task.name = f"{seed}-{len(tasks)}"
+            tasks.append(task)
             continue
         tasks.append(Task(f"{seed}-{len(tasks)}", task.train, task.test,
                           [SPACE.encode(y) for y in task.solutions],
@@ -93,10 +110,11 @@ def generate_shard(name: str, seed: int, n: int, sizes=(2, 20),
 
 @app.function(cpu=0.25, timeout=6 * 3600)
 def generate_all(name: str, shards: int, per_shard: int, start: int = 0,
-                 dsl: str = "1d", max_size: int = 20, exact: int = 0):
+                 dsl: str = "1d", max_size: int = 20, exact: int = 0,
+                 mutants: float = 0.5):
     """Every shard of a dataset, from inside Modal, so that no local client
     has to outlive the generation."""
-    args = [(name, start + s, per_shard, (2, max_size), dsl, exact)
+    args = [(name, start + s, per_shard, (2, max_size), dsl, exact, mutants)
             for s in range(shards)]
     secs = [r["sec"] for r in generate_shard.starmap(args)]
     return {"shards": len(secs), "tasks": shards * per_shard,
@@ -166,10 +184,9 @@ def _train(name, data, model_json, train_json, validation, eval_json,
     if os.path.exists(f"{out}/model.pt"):  # a preempted or repeated run
         state = torch.load(f"{out}/model.pt", map_location="cuda")
     if state is not None and state["step"] >= tc.steps:
-        from ldt.lattice import Typing
         from ldt.model import LDT
         log({"finished": state["step"]})
-        typing = Typing(SPACE).to("cuda")
+        typing = SPACE.typing().to("cuda")
         model = LDT(SPACE.n_positions, len(SPACE.vocab), config).to("cuda")
         model.load_state_dict(state["model"])
     else:
@@ -220,10 +237,9 @@ def evaluate_remote(run: str, bench: str, eval_json: str, unseal: str = "",
     """A trained run (or, with ``uniform``, the untrained control: no kill,
     uniform pins) on a benchmark."""
     import torch
-    from ldt.lattice import Typing
     from ldt.model import LDT, Config
     SPACE, _ = signature(dsl)
-    typing = Typing(SPACE).to("cuda")
+    typing = SPACE.typing().to("cuda")
     model = None
     if not uniform:
         state = torch.load(f"{VOL}/runs/{run}/model.pt", map_location="cuda")
@@ -327,13 +343,17 @@ def fetch(path: str, out: str = ""):
 @app.function(cpu=1.0, memory=4096, timeout=8 * 3600)
 def enumerate_chunk(budget: int, start: int, stop: int, bench: str = "1darc",
                     dsl: str = "1d", unseal: str = ""):
-    from ldt.enumerate import search
+    from ldt.enumerate import library, search
     from ldt.solve import correct
     SPACE, _ = signature(dsl)
+    if dsl == "rearc":  # no enumeration of 160 untyped functions: a library
+        from ldt.rearc import programs
+        known = list(programs().values())
     out = []
     for task in benchmark(bench, unseal)[start:stop]:
         t0 = time.time()
-        r = search(SPACE, task, budget)
+        r = library(SPACE, task, known) if dsl == "rearc"\
+            else search(SPACE, task, budget)
         top1, pass2, credit = correct(task, r.attempts)
         out.append({"name": task.name, "family": task.family,
                     "first": r.first_call, "found": len(r.programs),
