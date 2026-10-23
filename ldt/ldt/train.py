@@ -173,7 +173,8 @@ def train(space: Space, tasks: list[Task], config: Config, c: TrainConfig,
     start = 0
     if resume is not None:
         model.load_state_dict(resume["model"])
-        opt.load_state_dict(resume["optimizer"])
+        if "optimizer" in resume:  # final saves before 942fcd8 have none
+            opt.load_state_dict(resume["optimizer"])
         start = resume["step"]
         log({"resumed": start})
     pool = Pool(space, typing, tasks, c, device)

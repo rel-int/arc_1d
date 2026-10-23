@@ -52,7 +52,7 @@ an undefined `ite` branch that `Space.compile` never takes.
 ## Running it
 
 ```shell
-uv run --extra dev --extra discopy pytest
+REARC=<re-arc> ARC_AGI_ROOT=<ARC-AGI> uv run --extra dev --extra discopy pytest  # else those skip
 modal run modal_app.py::generate --name d1 --shards 200 --per-shard 500
 modal run --detach modal_app.py::train --name r1 --data d1 --gpu H100 --steps 20000
 modal run modal_app.py::evaluate --run r1 --prune 1 --evaluate '{"free": 0.5}'
@@ -138,11 +138,15 @@ arc-dsl program, parsed from source, canonicalised — as the target. 295 of the
 in this round; 298 do since the canonical form writes a repeated statement once.
 Each draw is a verifier task or, with probability one half, a one-edit mutant of a verifier run on
 that task's inputs: a program near the ARC distribution that no training task uses. Most mutants are
-undefined and the draw starts again, so about one task in ten is a mutant; r4b's data had about one
-in four, more than half of them giving the verifier's own outputs.
+undefined and the draw starts again, so about one task in ten is a mutant. r4b's data (d4) was drawn
+with probability 0.7 and before mutants giving the verifier's own outputs were dropped: 177 of the
+400 tasks of its first shard are mutants, 112 of them giving the verifier's outputs.
 
 The control is the **library**: every one of the 295 verifiers run as it is. A solution the LDT finds
-and the library does not is a program no training task gives.
+and the library does not is a program no training task gives. These are the round's numbers: the
+current code builds 298 verifiers, which solve 297 of ARC-AGI-1 training (3ac3eb23, 57aa92db and
+c8cbb738 join); the evaluation columns were read with the round's code, and a rerun would be a new
+read.
 
 | method | held-out re-arc (128) | ARC-AGI-1 training (400) | ARC-AGI-1 evaluation (400) | ARC-AGI-2 evaluation (120) |
 |---|---:|---:|---:|---:|
@@ -166,7 +170,8 @@ tasks), and building a 15-statement program field by field rarely survives every
 ARC-AGI-2 stays at 0 for every method, the library included: none of its tasks is a re-arc
 transformation or one edit away from one.
 
-The validation set is held-out re-arc tasks of the same 295 verifiers, so it measures recall within
+The validation set is 128 held-out tasks of r4b's data, re-arc examples of the same 295 verifiers of
+which about one in six is a one-edit mutant no verifier gives, so it measures recall within
 re-arc's distribution, not generalisation; the evaluation splits are the claim. Each of the four
 evaluation numbers is one read, logged in `EVALUATION.md` before it ran.
 

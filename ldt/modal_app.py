@@ -152,6 +152,8 @@ def _train(name, data, model_json, train_json, validation, eval_json,
     from ldt.train import TrainConfig, train as run_train
     from ldt.solve import solve, score
     SPACE, _ = signature(dsl)
+    if dsl != "1d" and "1darc" in benches.split(","):
+        raise ValueError(f"1darc is a 1D benchmark: pass --benches for {dsl}")
     out = f"{VOL}/runs/{name}"
     os.makedirs(out, exist_ok=True)
     volume.reload()

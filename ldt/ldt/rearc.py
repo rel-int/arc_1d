@@ -82,7 +82,8 @@ def parse(function: ast.FunctionDef) -> Program:
 
 @lru_cache(None)
 def programs(root: str = REARC, statements: int = 32) -> dict[str, Program]:
-    """Every verifier that fits ``statements`` once its dead code is gone."""
+    """Every verifier that fits ``statements`` in canonical form: dead code
+    gone, each repeated statement written once."""
     sp = space(root, statements)
     with open(os.path.join(root, "verifiers.py")) as f:
         tree = ast.parse(f.read())
@@ -162,7 +163,8 @@ class Generator:
         return None
 
     def mutate(self, rng: random.Random, program: Program) -> Program:
-        """One field of one statement replaced by another of its kind."""
+        """One field of one statement replaced by one of its kind, possibly
+        itself: :meth:`task` drops a mutant with the verifier's outputs."""
         i = rng.randrange(len(program))
         s = program[i]
         fields = [0] * (s.head in self.space.functions) + list(
