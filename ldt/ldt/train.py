@@ -160,7 +160,8 @@ def train(space: Space, tasks: list[Task], config: Config, c: TrainConfig,
           resume: dict | None = None):
     """Train from scratch, or from ``resume`` (a checkpoint's state, whose
     pool is drawn afresh), saving ``checkpoint[1](state)`` every
-    ``checkpoint[0]`` steps and at the last."""
+    ``checkpoint[0]`` steps and once more at the end, a run of no steps
+    included."""
     torch.manual_seed(c.seed)
     typing = space.typing().to(device)
     model = LDT(space.n_positions, len(space.vocab), config).to(device)
@@ -177,6 +178,11 @@ def train(space: Space, tasks: list[Task], config: Config, c: TrainConfig,
         log({"resumed": start})
     pool = Pool(space, typing, tasks, c, device)
     gen = torch.Generator(device=device).manual_seed(c.seed)
+
+    def snapshot(step):
+        return {"model": model.state_dict(), "optimizer": opt.state_dict(),
+                "config": asdict(config), "train": asdict(c), "step": step}
+
     stats, t0 = {}, time.time()
     amp = torch.autocast(device_type="cuda", dtype=torch.bfloat16)\
         if device == "cuda" else torch.autocast("cpu", enabled=False)
@@ -233,10 +239,8 @@ def train(space: Space, tasks: list[Task], config: Config, c: TrainConfig,
             stats = {}
         if validate is not None and (step + 1) % validate[0] == 0:
             log({"step": step + 1, "validation": validate[1](model, typing)})
-        if checkpoint is not None and ((step + 1) % checkpoint[0] == 0
-                                       or step + 1 == c.steps):
-            checkpoint[1]({"model": model.state_dict(),
-                           "optimizer": opt.state_dict(),
-                           "config": asdict(config), "train": asdict(c),
-                           "step": step + 1})
+        if checkpoint is not None and (step + 1) % checkpoint[0] == 0:
+            checkpoint[1](snapshot(step + 1))
+    if checkpoint is not None:
+        checkpoint[1](snapshot(c.steps))
     return model, typing

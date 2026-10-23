@@ -10,7 +10,8 @@ them (a ``modal run`` client that dies takes its app down with it).
 A training job writes its log on the volume, read back with
 ``modal run modal_app.py::fetch --path runs/<name>/log.jsonl``; an
 evaluation writes ``runs/<run>/eval-<bench><tag>.json``, an enumeration
-``enum/<name>.json`` and a generation only its shards, ``data/<name>/``.
+``enum/<name>.json`` (``enum/<bench>-<budget>.json`` without ``--name``)
+and a generation only its shards, ``data/<name>/``.
 """
 
 import argparse
