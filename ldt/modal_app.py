@@ -174,7 +174,7 @@ def _train(name, data, model_json, train_json, validation, eval_json,
             return {}
         model.eval()
         sub = held[:128]
-        res = solve(SPACE, typing, model, sub, chains=16, rounds=40, slots=32,
+        res = solve(SPACE, typing, model, sub, chains=16, rounds=80, slots=32,
                     enough=1, augment=False)
         model.train()
         return score(sub, res) | {"mean_first_call": _mean(
