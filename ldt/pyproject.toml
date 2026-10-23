@@ -1,0 +1,26 @@
+[project]
+name = "ldt"
+version = "0.1.0"
+description = "Lattice deduction over the Scott domain of Böhm trees, benchmarked on ARC"
+requires-python = ">=3.12"
+dependencies = [
+    "numpy>=2.0",
+    "torch>=2.6",
+]
+
+[project.optional-dependencies]
+discopy = ["discopy @ git+https://github.com/rel-int/discopy-next@215c17d"]
+modal = ["modal[api-proxy-support]>=1.6"]
+dev = ["pytest>=8"]
+
+[build-system]
+requires = ["uv_build>=0.8,<0.10"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-root = ""
+namespace = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--doctest-modules ldt tests"
