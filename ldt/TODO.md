@@ -11,9 +11,11 @@ USER's answers in the session (2026-10-22): programs first then the hybrid with 
 - [x] discopy-next `closed` as reference semantics (`ldt/discopy_bridge.py`), 400/400 round trips
 - [x] model, on-policy trainer, verified solver, enumeration control
 - [x] 98k synthetic tasks on Modal; pilot (3k steps, 15 min H100): 388/901 pass@2 vs enumeration 451/460/502 at 10^4/10^5/10^6
-- [ ] full run (20k steps); kill-free chains; untrained control
-- [ ] 1D-ARC: LDT vs enumeration vs untrained search, per family, search cost
+- [x] full run (20k steps); kill-free chains; untrained control: r1 514/901
+- [x] 1D-ARC: LDT vs enumeration vs untrained search, per family, search cost; LDT-then-enumeration 564
 - [x] abstract evaluation of partial trees (`ldt/abstract.py`), sound on every cut of 150 random programs
-- [ ] hybrid: prune with it at inference, measured; output-lattice state on the test input
-- [ ] 2D DSL, synthetic data, ARC-AGI-1 and ARC-AGI-2 public evaluation (pass@2)
+- [x] hybrid, first half: prune with abstract evaluation at inference, measured (sound, no gain in 1D)
+- [ ] hybrid, second half: a transductive output-lattice head whose state prunes programs
+- [x] 2D DSL, synthetic data (one-edit and exact α), ARC-AGI-1 and ARC-AGI-2 public evaluation:
+  enumeration 7/400 and 0/120, LDT 3/400 and 0/120, each one logged read
 - [ ] README with results; delete this file

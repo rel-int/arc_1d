@@ -12,3 +12,10 @@ which is said wherever its numbers are.
 | 2026-10-23 | ARC-AGI-1 evaluation | LDT r2d3 (exact α, 20k steps), 32 chains × 100 rounds, half kill-free, pass@2; chosen on ARC-AGI-1 training (25 vs 21 for r2d) | toumix-agents |
 | 2026-10-23 | ARC-AGI-2 evaluation | enumeration of `dsl2d` at 2×10⁴ programs per task, pass@2 | toumix-agents |
 | 2026-10-23 | ARC-AGI-2 evaluation | LDT r2d3, the same settings, pass@2 | toumix-agents |
+
+Results and one correction, 2026-10-23. ARC-AGI-1 evaluation: enumeration 7/400, LDT r2d3 3/400.
+ARC-AGI-2 evaluation: both reads scored 114 tasks, not 120: the exclusion of ARC-AGI-1's evaluation ids,
+meant for ARC-AGI-2's training split, also dropped the 6 evaluation tasks the two benchmarks share
+(fixed in `benchmark`). Those 6 are identical to ARC-AGI-1 evaluation tasks, whose read already
+scored them: neither method solves any. Both methods are 0/120 on ARC-AGI-2 evaluation, with no
+further read.

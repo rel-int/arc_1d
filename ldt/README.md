@@ -85,11 +85,37 @@ saturate; ahead on `recolor_oe` (50 against 0: the program, 11 nodes with a pari
 `map_segs`'s), and `move_2p_dp` (4 against 5). Neither solves `pcopy_*` or `recolor_cnt`, whose
 programs have 10 to 19 nodes.
 
+The two searches fail differently: 452 tasks are solved by both, 62 by the LDT alone and 50 by
+enumeration alone. The fixed policy "the LDT, then enumeration at 10⁶ when the LDT finds no program"
+solves **564**. For scale, the DreamCoder of arc_1d#2 reaches 677–682 with learned boxes and 842 with
+three hand-written ones, and GPT-4 on object representations 755 (Xu et al.): neither search here
+reaches the 10–19-node programs that `pcopy_*` and `recolor_cnt` need.
+
 Kill-free chains are what an unsound kill needs: the pilot learned to kill the right shift constant
 in `move_2p`/`move_3p` (12 and 10 of 50), and with half its chains only ordering pins they come back
-to 47 and 48. The model solves `recolor_oe` (32–39 of 50), which enumeration never reaches within
-10⁶ programs, and none of `mirror` (41 by enumeration). Abstract pruning is sound but, with the 1D
-transformers as coarse as they are, changes no outcome.
+to 47 and 48. Abstract pruning is sound but, with the 1D transformers as coarse as they are, changes
+no outcome.
 
-ARC-AGI-1 training (400 tasks, pass@2), the 2D signature (`ldt/dsl2d.py`, 75 primitives) by
-enumeration: 36 at 2×10⁴ programs per task (everything up to size 4), 46 at 10⁵.
+### ARC-AGI
+
+The 2D signature (`ldt/dsl2d.py`, 75 primitives over grids, objects, numbers, colours, booleans and
+directions) was written against ARC-AGI-1 training. pass@2, two attempts per test input:
+
+| method | ARC-AGI-1 training (400) | ARC-AGI-1 evaluation (400) | ARC-AGI-2 evaluation (120) |
+|---|---:|---:|---:|
+| enumeration by size, 2×10⁴ programs per task (sizes ≤ 4) | 36 | **7** | **0** |
+| enumeration by size, 10⁵ (sizes ≤ 5) | 46 | — | — |
+| untrained Scott-domain search, 3,200 calls per task | 7 | — | — |
+| LDT r2d (one-edit α, 12k steps) | 21 | — | — |
+| LDT r2d3 (exact α, 20k steps, ~$8), 3,200 calls per task | 25–27 | **3** | **0** |
+
+Each evaluation number is one read, logged in `EVALUATION.md` before it ran. The LDT's three
+ARC-AGI-1 evaluation tasks (`connect`, `upscale(n2)`, `symmetrize`) are among enumeration's seven.
+
+Two things limit 2D, and the second is the one to fix first. The signature reaches about 10% of
+ARC-AGI-1 training and 2% of its evaluation even by exhaustive search, so the ceiling is the DSL. And
+the 2D model learns slowly: its kills stay unsound on about half the training steps, where 1D's fall
+to a fifth. Part of that was the α target: in 2D most programs have equivalent rewrites
+(`rot90 ∘ flip_h = rot180 ∘ transpose`), and α over one-edit variants labels them wrong. Exact α
+(every minimal consistent program up to size 5) took validation from 4 to 6–8 of 128 held-out tasks
+and halved the calls to a first program, but did not close the gap to enumeration.

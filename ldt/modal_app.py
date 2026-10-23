@@ -61,7 +61,8 @@ def benchmark(bench: str, unseal: str = ""):
     if bench == "1darc":
         return load_1darc("/data/1D-ARC")
     root = {"arc1": "/data/ARC-AGI", "arc2": "/data/ARC-AGI-2"}[bench[:4]]
-    exclude = arc.sealed_ids("/data/ARC-AGI") if bench[:4] == "arc2" else ()
+    exclude = arc.sealed_ids("/data/ARC-AGI")\
+        if bench == "arc2-training" else ()
     return arc.load(root, bench.split("-", 1)[1], claim=unseal,
                     exclude=set(exclude))
 
@@ -234,10 +235,11 @@ def evaluate_remote(run: str, bench: str, eval_json: str, unseal: str = "",
     os.makedirs(out, exist_ok=True)
     report = run_benchmark(SPACE, typing, model, bench, eval_json, unseal,
                            f"{out}/{bench}{tag}", prune)
-    with open(f"{out}/eval.jsonl", "a") as f:
-        f.write(json.dumps({"bench": bench, "tag": tag, "prune": prune,
-                            "uniform": uniform, "eval": json.loads(eval_json),
-                            "report": report}) + "\n")
+    # one file per call: concurrent appends from containers overwrite
+    with open(f"{out}/eval-{bench}{tag}.json", "w") as f:
+        json.dump({"bench": bench, "tag": tag, "prune": prune,
+                   "uniform": uniform, "eval": json.loads(eval_json),
+                   "report": report}, f)
     volume.commit()
     return report
 
