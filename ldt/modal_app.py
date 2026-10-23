@@ -396,3 +396,22 @@ def enumerate_arc(budget: int = 100000, bench: str = "1darc",
                   dsl: str = "1d", unseal: str = ""):
     """The enumeration control on a benchmark."""
     print(json.dumps(enumerate_all.remote(budget, bench, dsl, unseal)))
+
+
+@app.function(cpu=1.0, timeout=300)
+def probe():
+    """Whether the time limit on programs holds in a container, as it must
+    before a sealed read: it needs the main thread."""
+    import threading
+    from ldt.bohm import Undefined
+    from ldt.straight import Program, Statement, StraightSpace
+    space = StraightSpace({"spin": lambda a: [a for _ in iter(int, 1)]}, {},
+                          statements=1, arity=1, seconds=0.5)
+    start = time.time()
+    try:
+        space.compile(Program([Statement("spin", ("I", ))]))(1)
+    except Undefined:
+        pass
+    return {"main_thread":
+            threading.current_thread() is threading.main_thread(),
+            "stopped_after": round(time.time() - start, 2)}
