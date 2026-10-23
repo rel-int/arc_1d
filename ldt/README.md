@@ -52,14 +52,14 @@ an undefined `ite` branch that `Space.compile` never takes.
 ## Running it
 
 ```shell
-REARC=<re-arc> ARC_AGI_ROOT=<ARC-AGI> uv run --extra dev --extra discopy pytest  # else those skip
+REARC=/path/to/re-arc ARC_AGI_ROOT=/path/to/ARC-AGI uv run --extra dev --extra discopy pytest
 modal run modal_app.py::generate --name d1 --shards 200 --per-shard 500
 modal run --detach modal_app.py::train --name r1 --data d1 --gpu H100 --steps 20000
 modal run modal_app.py::evaluate --run r1 --prune 1 --evaluate '{"free": 0.5}'
 modal run modal_app.py::enumerate_arc --budget 1000000
 ```
 
-The evaluation splits of ARC-AGI-1 and ARC-AGI-2 are sealed (`ldt/arc.py`); each read is logged in
+Without `REARC` and `ARC_AGI_ROOT` the tests that read re-arc and ARC-AGI skip. The evaluation splits of ARC-AGI-1 and ARC-AGI-2 are sealed (`ldt/arc.py`); each read is logged in
 `EVALUATION.md`.
 
 ## Results
